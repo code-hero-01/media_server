@@ -1,0 +1,3 @@
+/home/pranav/projects/media_server/build/CMakeFiles/media_server.dir
+/home/pranav/projects/media_server/build/CMakeFiles/edit_cache.dir
+/home/pranav/projects/media_server/build/CMakeFiles/rebuild_cache.dir
