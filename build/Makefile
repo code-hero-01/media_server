@@ -129,6 +129,30 @@ media_server/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/media_server.dir/build.make CMakeFiles/media_server.dir/build
 .PHONY : media_server/fast
 
+file_handler.o: file_handler.cpp.o
+.PHONY : file_handler.o
+
+# target to build an object file
+file_handler.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/media_server.dir/build.make CMakeFiles/media_server.dir/file_handler.cpp.o
+.PHONY : file_handler.cpp.o
+
+file_handler.i: file_handler.cpp.i
+.PHONY : file_handler.i
+
+# target to preprocess a source file
+file_handler.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/media_server.dir/build.make CMakeFiles/media_server.dir/file_handler.cpp.i
+.PHONY : file_handler.cpp.i
+
+file_handler.s: file_handler.cpp.s
+.PHONY : file_handler.s
+
+# target to generate assembly for a file
+file_handler.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/media_server.dir/build.make CMakeFiles/media_server.dir/file_handler.cpp.s
+.PHONY : file_handler.cpp.s
+
 http_server.o: http_server.cpp.o
 .PHONY : http_server.o
 
@@ -201,6 +225,30 @@ request.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/media_server.dir/build.make CMakeFiles/media_server.dir/request.cpp.s
 .PHONY : request.cpp.s
 
+response.o: response.cpp.o
+.PHONY : response.o
+
+# target to build an object file
+response.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/media_server.dir/build.make CMakeFiles/media_server.dir/response.cpp.o
+.PHONY : response.cpp.o
+
+response.i: response.cpp.i
+.PHONY : response.i
+
+# target to preprocess a source file
+response.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/media_server.dir/build.make CMakeFiles/media_server.dir/response.cpp.i
+.PHONY : response.cpp.i
+
+response.s: response.cpp.s
+.PHONY : response.s
+
+# target to generate assembly for a file
+response.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/media_server.dir/build.make CMakeFiles/media_server.dir/response.cpp.s
+.PHONY : response.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -210,6 +258,9 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... media_server"
+	@echo "... file_handler.o"
+	@echo "... file_handler.i"
+	@echo "... file_handler.s"
 	@echo "... http_server.o"
 	@echo "... http_server.i"
 	@echo "... http_server.s"
@@ -219,6 +270,9 @@ help:
 	@echo "... request.o"
 	@echo "... request.i"
 	@echo "... request.s"
+	@echo "... response.o"
+	@echo "... response.i"
+	@echo "... response.s"
 .PHONY : help
 
 

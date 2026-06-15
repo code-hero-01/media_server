@@ -10,10 +10,9 @@
 #include <cstring>
 #include <signal.h>
 #include <sys/wait.h>
-#include <fstream>
-#include <iterator>
-#include <unordered_map>
 #include "request.h"
+#include "response.h"
+#include "file_handler.h"
 using std::string;
 
 class Server {
@@ -21,18 +20,15 @@ private:
     const string port;
     int sockfd;
     int yes = 1;
-    bool debug = true;
+    bool debug;
+    string dir_name; // directory to serve
     
-    void handle_client(int client_fd, char* ipstr);
-    static string serve_template(string filename);
-    static string serve_static(string filepath);
-    static string parse_request(const Request& req);
-    static string make_response(int status, string content_type, const string& body);
-    static string get_content_type(string filepath);
-    void send_msg(int client_fd, string msg, char* ipstr);
+    void handle_client(int client_fd, char* ipstr);    
+    Response router(const Request& req);
+    void send_msg(int client_fd, const string& msg, char* ipstr);
     void* get_in_addr(struct sockaddr *sa);
 public:
-    Server(string port);
+    Server(string port, string dir_name, bool debug=false);
     void start();
     void start_listening();
     void shutdown();

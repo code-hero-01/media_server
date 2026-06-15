@@ -1,10 +1,14 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/media_server.dir/file_handler.cpp.o"
+  "CMakeFiles/media_server.dir/file_handler.cpp.o.d"
   "CMakeFiles/media_server.dir/http_server.cpp.o"
   "CMakeFiles/media_server.dir/http_server.cpp.o.d"
   "CMakeFiles/media_server.dir/main.cpp.o"
   "CMakeFiles/media_server.dir/main.cpp.o.d"
   "CMakeFiles/media_server.dir/request.cpp.o"
   "CMakeFiles/media_server.dir/request.cpp.o.d"
+  "CMakeFiles/media_server.dir/response.cpp.o"
+  "CMakeFiles/media_server.dir/response.cpp.o.d"
   "media_server"
   "media_server.pdb"
 )

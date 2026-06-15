@@ -5,7 +5,8 @@ using std::cerr;
 #define BACKLOG 10
 
 // constructor
-Server::Server(string port) : port(port) { return; }
+Server::Server(string port, string dir_name, bool debug) 
+    : port(port), dir_name(dir_name), debug(debug) {}
 
 void Server::start() {
     addrinfo hints{}, *res; 
@@ -102,7 +103,8 @@ void Server::handle_client(int client_fd, char* ipstr) {
             // std::cout << "Request version: " << req.version << "\n";   
         }
                 
-        string response_msg = parse_request(req);
+        Response res = router(req);
+        string response_msg = res.serialize();
         send_msg(client_fd, response_msg, ipstr);
         
         close(client_fd);
@@ -115,7 +117,7 @@ void* Server::get_in_addr(struct sockaddr *sa) {
         return &(((sockaddr_in6*) sa)->sin6_addr);
 }
 
-void Server::send_msg(int client_fd, string msg, char* ipstr) {
+void Server::send_msg(int client_fd, const string& msg, char* ipstr) {
     if (send(client_fd, msg.c_str(), msg.size(), 0) == -1) {
             cerr << "send: " << std::strerror(errno) << "\n";
         } else {
@@ -123,128 +125,52 @@ void Server::send_msg(int client_fd, string msg, char* ipstr) {
         }
 }
 
-string Server::parse_request(const Request& req) {
+Response Server::router(const Request& req)
+{
     if (req.method != "GET") {
-        return make_response(
+        return Response(
             405,
             "text/html",
             "<h1>405 Method Not Allowed</h1>"
         );
     }
 
-    if (req.version != "HTTP/1.1")
-        {
-            return make_response(
-                505,
-                "text/html",
-                "<h1>505 HTTP Version Not Supported</h1>"
-            );
-        }
-
-    string page;
-    string content_type;
-
-    if (req.path == "/") {
-        content_type = "text/html";
-        page = serve_template("home");
-    }
-    else if (req.path.starts_with("/static/")) {
-        content_type = "image/gif";
-        page = serve_static(req.path);
-    }
-    else {
-        content_type = "text/html";
-        page = serve_template(req.path.substr(1));
-    }
-
-    if (page.empty()) {
-        return make_response(
-            404,
+    if (req.version != "HTTP/1.1") {
+        return Response(
+            505,
             "text/html",
-            "<h1>404 Not Found</h1>"
+            "<h1>505 HTTP Version Not Supported</h1>"
         );
     }
 
-    return make_response(200, content_type, page);
-}
-
-std::string Server::make_response(
-    int status,
-    string content_type,
-    const std::string& body)
-{
-    std::string status_line;
-
-    if (status == 200)
-        status_line = "HTTP/1.1 200 OK\r\n";
-    else if (status == 404)
-        status_line = "HTTP/1.1 404 Not Found\r\n";
-    else if (status == 405)
-        status_line = "HTTP/1.1 405 Method Not Allowed\r\n";
-
-    return status_line +
-           "Content-Type: " + content_type + "\r\n"
-           "Content-Length: " + std::to_string(body.size()) + "\r\n"
-           "Connection: close\r\n"
-           "\r\n" +
-           body;
-}
-
-// return html text from an html file in template
-string Server::serve_template(string filename) {
-    string filepath = "templates/" + filename + ".html";
-    std::ifstream file(filepath);
-
-    if (!file.is_open()) {
-        std::cerr << "Error: Could not open the file: " << filepath << "\n";
+    // Homepage
+    if (req.path == "/") {
+        string page;
+        string content_list = file_handler::generate_content_list(dir_name);
+        if (!file_handler::serve_template("home", page)) 
+            return Response(404, "text/html", "<h1>404 Not Found</h1>");
+        file_handler::render_template(page, "{{CONTENT_LIST}}", content_list);
+        return Response(200, "text/html", page);
     }
 
-    string content;
-    string line;
-    while (std::getline(file, line)) {
-        content += line + "\n";
+    // media files
+    if (req.path.starts_with("/static/") || req.path.starts_with("/" + dir_name + "/")) {
+        string filepath = req.path.substr(1);
+        string content;
+
+        if (!file_handler::serve_media(filepath, content)) 
+            return Response(404, "text/html", "<h1>404 Not Found</h1>");
+
+        return Response(200, file_handler::get_content_type(filepath), content);
     }
 
-    file.close();
-    
-    return content;
+    // Template routes (/about, /contact, etc.)
+    string page;
+    if (!file_handler::serve_template(req.path.substr(1), page))
+        return Response(404, "text/html", "<h1>404 Not Found</h1>");
+
+    return Response(200, "text/html", page);
 }
 
-// return binary data from a file in static
-string Server::serve_static(string filepath) {
-    std::ifstream file(filepath.substr(1), std::ios::binary);
 
-    if (!file.is_open()) {
-        std::cerr << "Error: Could not open the file: " << filepath << "\n";
-    }
 
-    string content(
-        std::istreambuf_iterator<char>{file},
-        std::istreambuf_iterator<char>{}
-    );
-    
-    return content;
-}
-
-string Server::get_content_type(string filepath) {
-    static const std::unordered_map<string, string> mime_types = {
-        {".html", "text/html"},
-        {".css",  "text/css"},
-        {".gif",  "image/gif"},
-        {".png",  "image/png"},
-        {".jpg",  "image/jpeg"},
-        {".jpeg", "image/jpeg"},
-        {".js",   "application/javascript"},
-        {".mp3",  "audio/mpeg"},
-        {".mp4",  "video/mp4"}
-    };
-
-    auto ext = filepath.substr(filepath.find_last_of('.'));
-
-    auto it = mime_types.find(ext);
-
-    if (it != mime_types.end())
-        return it->second;
-
-    return "application/octet-stream";
-}

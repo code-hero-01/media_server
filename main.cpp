@@ -14,7 +14,7 @@
 int main(void) {
     int port_num = 6969;
     std::string port_str = std::to_string(port_num);
-    Server server(port_str);
+    Server server(port_str, "media");
     server.start();
     server.start_listening();
     return 0;
