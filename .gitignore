@@ -1,0 +1,10 @@
+# Ignore everything in media
+media/*
+
+# Allow demo assets
+!media/demo.mp4
+!media/demo.mp3
+!media/demo.jpg
+
+# Keep folder
+!media/.gitkeep
