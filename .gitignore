@@ -2,9 +2,9 @@
 media/*
 
 # Allow demo assets
-!media/demo.mp4
-!media/demo.mp3
-!media/demo.jpg
+!media/miku windows.jpg
+!media/Momoka singing scene - Girls Band Cry Episode 1.mp3
+!media/dream dance [1e6b5dBGmfs].mp4
 
 # Keep folder
 !media/.gitkeep
