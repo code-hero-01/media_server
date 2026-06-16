@@ -34,8 +34,8 @@ namespace file_handler {
     }
 
     // read binary data from a file in static
-    bool serve_media(const string& filepath, string& content) {
-        string path = url_decode(filepath);
+    bool serve_file(const string& filepath, string& content, size_t start, size_t end) {
+        string path = decode_url(filepath);
         std::ifstream file(path, std::ios::binary);
 
         if (!file.is_open()) {
@@ -43,13 +43,23 @@ namespace file_handler {
             return false;
         }
 
-        content.assign(
-            std::istreambuf_iterator<char>{file},
-            std::istreambuf_iterator<char>{}
-        );
+        size_t file_size = get_file_size(path);
+
+        if (end == SIZE_MAX)
+            end = file_size - 1;
+
+        if (start > end || end >= file_size)
+            return false;
+
+        size_t length = end - start + 1;
+        content.resize(length);
+        file.seekg(start);
+        
+        file.read(content.data(), length);
         
         return true;
     }
+
 
     string get_content_type(const string& filepath) {
         static const std::unordered_map<string, string> mime_types = {
@@ -74,10 +84,10 @@ namespace file_handler {
         return "application/octet-stream";
     }
 
-    string generate_content_list(const string& dir_name) {
-        string html = "<h2>./" + dir_name + "</h2>";
+    string generate_content_list(const string& dir_path) {
+        string html;
         html += "<ul>";
-        fs::path path = "./" + dir_name;
+        fs::path path = dir_path;
         if (fs::exists(path) && fs::is_directory(path)) {
             for (const auto& entry : fs::directory_iterator(path)) {
                 string filename = entry.path().filename().string();
@@ -87,14 +97,19 @@ namespace file_handler {
                 html += "<li><a href=\"" + filepath + "\">" + filename + "</a></li>";
             }
         } else {
-            std::cerr << "Directory: ./" << dir_name << " does not exist or is invalid.\n";
+            std::cerr << "Directory: ./" << dir_path << " does not exist or is invalid.\n";
             return "";
         }
         html += "</ul>";
         return html;
     }
 
-    string url_decode(const std::string& str) {
+    string resolve_path(const string& url_path) {
+        string decoded = decode_url(url_path);
+        return "." + decoded;
+    }
+
+    string decode_url(const string& str) {
         std::string result;
 
         for (size_t i = 0; i < str.size(); i++) {
@@ -111,5 +126,56 @@ namespace file_handler {
         }
 
         return result;
+    }
+
+    string generate_breadcrumbs(const string& dir_path) {
+        string html;
+        std::istringstream ss(dir_path.substr(1));
+        string segment;
+        string current_path;
+
+        html = R"(<a href="/">Home</a>)";
+
+        while (std::getline(ss, segment, '/')) {
+            if (segment.empty())
+                continue;
+            
+            current_path += "/" + segment;
+
+            html += " / ";
+            html += "<a href=\"" + current_path + "\">";
+            html += segment;
+            html += "</a>";
+        }
+
+        return html;
+    }
+
+    // parse "bytes=num-"
+    ByteRange parse_range(const string& header, size_t file_size) {
+        ByteRange range;     
+
+        string value = header.substr(6); // without "bytes="
+        
+        // get num
+        size_t dash_pos = value.find('-');
+        if (dash_pos == string::npos)
+            return range;
+        
+        string start_str = value.substr(0, dash_pos);
+        if (start_str.empty())
+            return range;
+        range.start = stoull(start_str);
+        
+        if (range.start >= file_size)
+            return range;
+
+        range.end = file_size - 1;
+        range.valid = true;
+        return range;   
+    }
+
+    size_t get_file_size(const string& file_path) {
+        return  std::filesystem::file_size(file_path);
     }
 }

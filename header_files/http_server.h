@@ -13,6 +13,7 @@
 #include "request.h"
 #include "response.h"
 #include "file_handler.h"
+#include "filesystem"
 using std::string;
 
 class Server {
@@ -25,6 +26,7 @@ private:
     
     void handle_client(int client_fd, char* ipstr);    
     Response router(const Request& req);
+    Response handle_media_route(const Request& req);
     void send_msg(int client_fd, const string& msg, char* ipstr);
     void* get_in_addr(struct sockaddr *sa);
 public:

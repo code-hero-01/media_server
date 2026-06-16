@@ -10,6 +10,7 @@ private:
     string content_type;
     string body;
 public:
+    std::unordered_map<string, string> headers;
     Response(
         const int status, 
         const string& content_type, 

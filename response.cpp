@@ -13,16 +13,29 @@ string Response::serialize() {
     switch (status)
     {
         case 200: reason = "OK"; break;
+        case 206: reason = "Partial Content"; break;
         case 404: reason = "Not Found"; break;
         case 405: reason = "Method Not Allowed"; break;
         case 505: reason = "HTTP Version Not Supported"; break;
         default:  reason = "Unknown";
     }
-
-    return
+        
+    string response =
         "HTTP/1.1 " + std::to_string(status) + " " + reason + "\r\n"
         "Content-Type: " + content_type + "\r\n"
-        "Content-Length: " + std::to_string(body.size()) + "\r\n"
-        "Connection: close\r\n\r\n" +
-        body;  
+        "Content-Length: " + std::to_string(body.size()) + "\r\n";
+
+    for (const auto& [key, value] : headers) {
+        response += key + ": " + value + "\r\n";
+    }
+
+    response +=
+        "Connection: close\r\n"
+        "\r\n";
+
+    //std::cout << response << "\n";
+    
+    response += body;
+
+    return response;
 }
