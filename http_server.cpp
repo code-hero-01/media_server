@@ -2,16 +2,20 @@
 #include "header_files/http_server.h"
 
 using std::cerr;
-#define BACKLOG 10
+#define BACKLOG 128
 
 // constructor
 Server::Server(string port, string dir_name, bool debug) 
     : port(port), dir_name(dir_name), debug(debug) {
+        instance = this;
+        
         // Prevent SIGPIPE from terminating the server when a client disconnects
         signal(SIGPIPE, SIG_IGN);
     }
 
 void Server::start() {
+    std::cerr << "Media_Server waking up...";
+
     addrinfo hints{}, *res; 
     hints.ai_family = AF_UNSPEC;    // either ipv4 or ipv6
     hints.ai_socktype = SOCK_STREAM;   // TCP
@@ -50,35 +54,68 @@ void Server::start() {
         cerr << "server failed to bind...\n";
         exit(1);
     }
-}
 
-void Server::start_listening() {
+    unsigned int num_threads = 10;
+    std::vector<std::thread> threads;
+
+    start_time = std::chrono::steady_clock::now();
+    
     if (listen(sockfd, BACKLOG) == -1) {
         cerr << "listen: " << std::strerror(errno) << "\n";
         exit(1);
     }
+    
     std::cout << "Listening on port: " << port << "\n";
     std::cout << "Waiting for connections...\n";
+    
+    for (unsigned int i = 0; i < num_threads; ++i) {
+        threads.emplace_back(
+            &Server::listener,
+            this,
+            i   
+        );
+    }
+
+    for (auto& t : threads) {
+        if (t.joinable()) {
+            std::cerr << "Listener: " << listener_id << " going to sleep...\n";
+            t.join();
+        }
+    }
+
+    shutdown();
+}
+
+void Server::listener(int thread_id) {
+    listener_id = thread_id;
+    cerr << "Listener: " << thread_id << " woke up\n";
 
     sockaddr_storage their_addr;
     socklen_t addr_size;
-    while(true) {
+    
+    while(keep_running) {
         addr_size = sizeof (their_addr);
         int client_fd = accept(sockfd, (sockaddr*) &their_addr, &addr_size);
         if (client_fd == -1) {
+            if (!keep_running) break;
+            
             cerr << "accept: " << std::strerror(errno) << "\n";
             continue;
         }
 
         char ipstr[INET6_ADDRSTRLEN];
         inet_ntop(their_addr.ss_family, get_in_addr((sockaddr*) &their_addr), ipstr, sizeof(ipstr));
-        cerr << "Server connected to: " << ipstr << "\n";
-         
+        cerr << "Listener: " << thread_id << " connected to client (" << ipstr << ")\n";
+        
         handle_client(client_fd, ipstr);
+        request_counter++;
+        std::cerr << "Listener: " << thread_id << " handled request " << request_counter << "\n";
     }
 }
 
 void Server::handle_client(int client_fd, char* ipstr) {
+    std::this_thread::sleep_for(1s);
+    
     std::string received_msg;
     char buffer[1024];
     while (true) {
@@ -89,7 +126,7 @@ void Server::handle_client(int client_fd, char* ipstr) {
             return;
         }
         if (bytes == 0) {
-            std::cout << "Client " << ipstr << " closed connection\n";
+            std::cout << "Client (" << ipstr << ") closed connection\n";
             break;    
         }
         received_msg.append(buffer, bytes);
@@ -113,6 +150,7 @@ void Server::handle_client(int client_fd, char* ipstr) {
     send_msg(client_fd, response_msg, ipstr);
     
     close(client_fd);
+    std::cerr << "Server disconnected from client (" << ipstr << ")\n";
 }
 
 void* Server::get_in_addr(struct sockaddr *sa) {
@@ -124,7 +162,7 @@ void* Server::get_in_addr(struct sockaddr *sa) {
 
 void Server::send_msg(int client_fd, const string& msg, char* ipstr) {
     size_t total = 0;
-
+    //std::cerr << msg << "\n";
     while (total < msg.size()) {
         ssize_t bytes_sent =
             send(client_fd,
@@ -134,7 +172,7 @@ void Server::send_msg(int client_fd, const string& msg, char* ipstr) {
 
         if (bytes_sent == -1) {
             if (errno == EPIPE || errno == ECONNRESET) {
-                cerr << "client disconnected (" << ipstr << ")\n";
+                cerr << "Client (" << ipstr << ") disconnected\n";
             } else {
                 cerr << "send: " << std::strerror(errno) << "\n";
             }
@@ -144,7 +182,7 @@ void Server::send_msg(int client_fd, const string& msg, char* ipstr) {
         total += bytes_sent;
     }
 
-    cerr << "message sent to client: " << ipstr << "\n";
+    cerr << "message sent to client (" << ipstr << ")\n";
 }
 
 Response Server::router(const Request& req)
@@ -249,5 +287,33 @@ Response Server::handle_media_route(const Request& req) {
         }
     }
 }
+
+bool check(int result, string& err_msg) {
+    if (result < 0) {
+        cerr << err_msg << " " << strerror(errno) << "\n";
+        return true; // error occured
+    }
+
+    return false; // no error
+}
+
+// handle ctrl-c signal
+void Server::handle_signal(int signal_num) {
+    if (signal_num == SIGINT && instance != nullptr) {
+        std::cout << "\n[Ctrl+C detected! Initiating graceful shut down...]\n";
+        instance->keep_running = false;
+        ::shutdown(instance->sockfd, SHUT_RDWR);
+        close(instance->sockfd);
+    } 
+}
+
+void Server::shutdown() {
+    std::cout << "Media_Server shutting down...\n";
+    auto end_time = std::chrono::steady_clock::now();
+    duration = std::chrono::duration<double>(end_time - start_time).count();
+    std::cout << "Server ran for: " << duration << "s\n";
+    std::cout << "Server handled: " << request_counter << " requests\n";
+}
+
 
 

@@ -94,7 +94,13 @@ namespace file_handler {
                 string filepath = entry.path().string().substr(1);
                 if (filename.find(":Zone.Identifier") != std::string::npos)
                     continue;
-                html += "<li><a href=\"" + filepath + "\">" + filename + "</a></li>";
+                
+                if (entry.is_directory()) { // indent subdirectories
+                    html += "<li style=\"margin-left: 40px;\"><a href=\"" + filepath + "\">" + filename + "</a></li>";
+                }
+                else {
+                    html += "<li><a href=\"" + filepath + "\">" + filename + "</a></li>";
+                }
             }
         } else {
             std::cerr << "Directory: ./" << dir_path << " does not exist or is invalid.\n";
