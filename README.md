@@ -1,37 +1,44 @@
 # Media Server
 
-A self-hosted media server written in C++.
+A self-hosted multithraded http server written in C++.
 
-## Goals
+- Serves text, image, music and video files from specified directory over HTTP
+- Uses POSIX TCP sockets
+- Support seeking in media files (supports http range requests)
+- Multithreaded
 
-- Serve music and video files over HTTP
-- Access from browser on PC or phone
-- Support multiple clients
-- Support seeking in media files
-- Store media metadata
+## Build and Installation   
 
-## Milestones
+1. **Clone the repository**:   
+   ```bash
+   git clone https://github.com/code-hero-01/media_server
+   cd media_server
+   ```   
 
-### Milestone 1
-TCP server that accepts connections
+2. **Create a build directory**:  
+   ```bash
+   mkdir build && cd build
+   ```
 
-### Milestone 2
-Basic HTTP server
+3. **Configure the project**:  
+   ```bash
+   cmake ..
+   ```
 
-### Milestone 3
-Serve HTML pages
+4. **Compile the source code**:    
+ ```bash
+   cmake --build .
+   ```   
 
-### Milestone 4
-Serve static files
+## Running the Application  
 
-### Milestone 5
-Stream audio/video
+Once the compilation finishes, you can run the executable from inside your `build` directory:  
 
-### Milestone 6
-Multithreading
+  ```bash
+  ./media_server
+  ```   
 
-### Milestone 7
-Range requests
-
-### Milestone 8
-Media library database
+## Benchmarking and Testing  
+```cd test
+   ./benchmark <number of clients> <number of requests per client>
+   ```
