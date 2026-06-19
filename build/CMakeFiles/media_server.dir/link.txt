@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/media_server.dir/main.cpp.o CMakeFiles/media_server.dir/http_server.cpp.o CMakeFiles/media_server.dir/request.cpp.o CMakeFiles/media_server.dir/response.cpp.o CMakeFiles/media_server.dir/file_handler.cpp.o -o media_server 
