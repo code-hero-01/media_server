@@ -6,7 +6,7 @@ using std::cerr;
 
 // constructor
 Server::Server(string port, string dir_name, bool debug) 
-    : port(port), dir_name(dir_name), debug(debug) {
+    : PORT(port), DIR_NAME(dir_name), debug(debug) {
         instance = this;
         
         // Prevent SIGPIPE from terminating the server when a client disconnects
@@ -22,7 +22,7 @@ void Server::start() {
     hints.ai_flags = AI_PASSIVE;
 
     int status;
-    if ((status = getaddrinfo(NULL, port.c_str(), &hints, &res)) != 0) {
+    if ((status = getaddrinfo(NULL, PORT.c_str(), &hints, &res)) != 0) {
         cerr << "getaddrinfo: " << gai_strerror(status) << "\n";
         exit(1);
     }
@@ -55,7 +55,7 @@ void Server::start() {
         exit(1);
     }
 
-    unsigned int num_threads = 10;
+    
     std::vector<std::thread> threads;
 
     start_time = std::chrono::steady_clock::now();
@@ -65,12 +65,12 @@ void Server::start() {
         exit(1);
     }
     
-    std::cout << "Listening on port: " << port << "\n";
+    std::cout << "Listening on port: " << PORT << "\n";
     std::cout << "Waiting for connections...\n";
     
-    for (unsigned int i = 0; i < num_threads; ++i) {
+    for (unsigned int i = 0; i < NUM_THREADS; ++i) {
         threads.emplace_back(
-            &Server::listener,
+            &Server::worker,
             this,
             i   
         );
@@ -78,7 +78,7 @@ void Server::start() {
 
     for (auto& t : threads) {
         if (t.joinable()) {
-            std::cerr << "Listener: " << listener_id << " going to sleep...\n";
+            //std::cerr << "Worker (" << worker_id << ") going to sleep...\n";
             t.join();
         }
     }
@@ -86,9 +86,9 @@ void Server::start() {
     shutdown();
 }
 
-void Server::listener(int thread_id) {
-    listener_id = thread_id;
-    cerr << "Listener: " << thread_id << " woke up\n";
+void Server::worker(int thread_id) {
+    worker_id = thread_id;
+    log("woke up...");
 
     sockaddr_storage their_addr;
     socklen_t addr_size;
@@ -105,11 +105,11 @@ void Server::listener(int thread_id) {
 
         char ipstr[INET6_ADDRSTRLEN];
         inet_ntop(their_addr.ss_family, get_in_addr((sockaddr*) &their_addr), ipstr, sizeof(ipstr));
-        cerr << "Listener: " << thread_id << " connected to client (" << ipstr << ")\n";
+        log(string("connected to client (") + ipstr + ")"); 
         
         handle_client(client_fd, ipstr);
         request_counter++;
-        std::cerr << "Listener: " << thread_id << " handled request " << request_counter << "\n";
+        log(string("handled request ") + to_string(request_counter));
     }
 }
 
@@ -150,7 +150,7 @@ void Server::handle_client(int client_fd, char* ipstr) {
     send_msg(client_fd, response_msg, ipstr);
     
     close(client_fd);
-    std::cerr << "Server disconnected from client (" << ipstr << ")\n";
+    log(string("disconnected from client (") + ipstr + ")");
 }
 
 void* Server::get_in_addr(struct sockaddr *sa) {
@@ -182,7 +182,7 @@ void Server::send_msg(int client_fd, const string& msg, char* ipstr) {
         total += bytes_sent;
     }
 
-    cerr << "message sent to client (" << ipstr << ")\n";
+    log(string("sent message to Client (") + ipstr + ")");
 }
 
 Response Server::router(const Request& req)
@@ -210,9 +210,9 @@ Response Server::router(const Request& req)
         if (!file_handler::serve_template("./home", page)) 
             return Response(404, "text/html", "<h1>404 Not Found</h1>");
         
-        string content_list = file_handler::generate_content_list("./" + dir_name);    
+        string content_list = file_handler::generate_content_list("./" + DIR_NAME);    
         file_handler::render_template(page, "{{CONTENT_LIST}}", content_list);
-        file_handler::render_template(page, "{{DIR_NAME}}", "./" + dir_name);
+        file_handler::render_template(page, "{{DIR_NAME}}", "./" + DIR_NAME);
         return Response(200, "text/html", page);
     }
 
@@ -227,7 +227,7 @@ Response Server::router(const Request& req)
     }
 
     // file or folder request
-    if (req.path.starts_with("/" + dir_name)) {
+    if (req.path.starts_with("/" + DIR_NAME)) {
         return handle_media_route(req);
     }
 
@@ -288,13 +288,29 @@ Response Server::handle_media_route(const Request& req) {
     }
 }
 
-bool check(int result, string& err_msg) {
+bool Server::check(int result, string& err_msg) {
     if (result < 0) {
         cerr << err_msg << " " << strerror(errno) << "\n";
         return true; // error occured
     }
 
     return false; // no error
+}
+
+std::mutex log_mutex;
+void Server::log(string msg) const {
+    std::lock_guard<std::mutex> lock(log_mutex);
+
+    auto now = std::chrono::steady_clock::now();
+    double ms = std::chrono::duration<double, std::milli>(now - start_time).count();
+
+    std::cerr << "["
+              << ms
+              << "ms] [Worker "
+              << worker_id
+              << "] "
+              << msg
+              << "\n";
 }
 
 // handle ctrl-c signal

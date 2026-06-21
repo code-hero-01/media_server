@@ -35,10 +35,11 @@ A self-hosted multithraded http server written in C++.
 Once the compilation finishes, you can run the executable from inside your `build` directory:  
 
   ```bash
-  ./media_server
+   ./media_server
   ```   
 
 ## Benchmarking and Testing  
-```cd test
+```bash
+   cd test
    ./benchmark <number of clients> <number of requests per client>
-   ```
+```

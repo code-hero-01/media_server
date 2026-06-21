@@ -23,9 +23,10 @@ using std::string;
 
 class Server {
 private:
-    const string port;
-    string dir_name; // directory to serve
-    
+    const string PORT;
+    const string DIR_NAME; // directory to serve
+    const unsigned int NUM_THREADS = 10;
+
     int sockfd;
     int yes = 1;
     
@@ -37,19 +38,20 @@ private:
 
     std::atomic<int> request_counter{0};
     inline static Server* instance = nullptr;
-    int listener_id;
+    int worker_id;
     
     void handle_client(int client_fd, char* ipstr);    
     Response router(const Request& req);
     Response handle_media_route(const Request& req);
     void send_msg(int client_fd, const string& msg, char* ipstr);
     void* get_in_addr(struct sockaddr *sa);
-    bool check(int result, string& err_msg) const;
+    static bool check(int result, string& err_msg);
+    void log(string msg) const;
 public:
     Server(string port, string dir_name, bool debug=false);
     
     void start();
-    void listener(int thread_id);
+    void worker(int thread_id);
     static void handle_signal(int signal_num); // handle ctrl-c signal
     void shutdown();
 };
