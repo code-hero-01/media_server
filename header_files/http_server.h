@@ -18,8 +18,21 @@
 #include <atomic>
 #include <chrono>
 #include <vector>
+#include <queue>
+#include <condition_variable>
 using namespace std::chrono_literals;
 using std::string;
+
+struct Client {
+    int fd;
+    char* ip;
+
+    Client() = default;
+    Client(int fd, char* ip) {
+        this->fd = fd;
+        this->ip = ip;
+    }
+};
 
 class Server {
 private:
@@ -31,14 +44,16 @@ private:
     int yes = 1;
     
     bool debug;
-    std::atomic<bool> keep_running{true};
+    std::atomic<bool> running{true};
     
     std::chrono::steady_clock::time_point start_time;
     double duration{0};
 
     std::atomic<int> request_counter{0};
     inline static Server* instance = nullptr;
-    int worker_id;
+
+    std::queue<Client> client_q;
+    std::condition_variable cv;
     
     void handle_client(int client_fd, char* ipstr);    
     Response router(const Request& req);
@@ -51,7 +66,9 @@ public:
     Server(string port, string dir_name, bool debug=false);
     
     void start();
-    void worker(int thread_id);
+    void listener();
+    void worker();
     static void handle_signal(int signal_num); // handle ctrl-c signal
     void shutdown();
 };
+

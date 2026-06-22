@@ -2,7 +2,7 @@
 #include "header_files/http_server.h"
 
 using std::cerr;
-#define BACKLOG 128
+#define BACKLOG 64
 
 // constructor
 Server::Server(string port, string dir_name, bool debug) 
@@ -14,7 +14,7 @@ Server::Server(string port, string dir_name, bool debug)
     }
 
 void Server::start() {
-    std::cerr << "Media_Server waking up...";
+    std::cerr << "Media_Server waking up...\n";
 
     addrinfo hints{}, *res; 
     hints.ai_family = AF_UNSPEC;    // either ipv4 or ipv6
@@ -65,17 +65,21 @@ void Server::start() {
         exit(1);
     }
     
+    std::thread listener_thread(&Server::listener, this);
+
     std::cout << "Listening on port: " << PORT << "\n";
     std::cout << "Waiting for connections...\n";
-    
+
     for (unsigned int i = 0; i < NUM_THREADS; ++i) {
         threads.emplace_back(
             &Server::worker,
-            this,
-            i   
+            this 
         );
     }
 
+    if (listener_thread.joinable()) 
+        listener_thread.join();
+    
     for (auto& t : threads) {
         if (t.joinable()) {
             //std::cerr << "Worker (" << worker_id << ") going to sleep...\n";
@@ -86,28 +90,56 @@ void Server::start() {
     shutdown();
 }
 
-void Server::worker(int thread_id) {
-    worker_id = thread_id;
-    log("woke up...");
+std::mutex q_mutex;
 
+void Server::listener() {
     sockaddr_storage their_addr;
     socklen_t addr_size;
-    
-    while(keep_running) {
+    while (running) {
         addr_size = sizeof (their_addr);
         int client_fd = accept(sockfd, (sockaddr*) &their_addr, &addr_size);
         if (client_fd == -1) {
-            if (!keep_running) break;
+            if (!running) break;
             
             cerr << "accept: " << std::strerror(errno) << "\n";
             continue;
         }
+        
+        if (!running) {
+            close(client_fd);
+            break;
+        }
 
         char ipstr[INET6_ADDRSTRLEN];
         inet_ntop(their_addr.ss_family, get_in_addr((sockaddr*) &their_addr), ipstr, sizeof(ipstr));
-        log(string("connected to client (") + ipstr + ")"); 
         
-        handle_client(client_fd, ipstr);
+        {
+            std::lock_guard<std::mutex> lock(q_mutex);
+            Client client(client_fd, ipstr);
+            client_q.push(client);
+        }
+        cv.notify_one();
+        
+       log(string("connected to client (") + ipstr + ")"); 
+    } 
+}
+
+void Server::worker() {
+    while(running) { 
+        Client client;
+        {
+            std::unique_lock<std::mutex> lock(q_mutex);
+            
+            cv.wait(lock, [&] { return !client_q.empty() || !running; });
+            
+            if (!running && client_q.empty()) return; 
+            
+            client = client_q.front();
+            client_q.pop();
+        }
+        
+        handle_client(client.fd, client.ip);
+        
         request_counter++;
         log(string("handled request ") + to_string(request_counter));
     }
@@ -182,7 +214,7 @@ void Server::send_msg(int client_fd, const string& msg, char* ipstr) {
         total += bytes_sent;
     }
 
-    log(string("sent message to Client (") + ipstr + ")");
+    log(string("sent message to client (") + ipstr + ")");
 }
 
 Response Server::router(const Request& req)
@@ -306,8 +338,8 @@ void Server::log(string msg) const {
 
     std::cerr << "["
               << ms
-              << "ms] [Worker "
-              << worker_id
+              << "ms]["
+              << std::this_thread::get_id()
               << "] "
               << msg
               << "\n";
@@ -317,8 +349,9 @@ void Server::log(string msg) const {
 void Server::handle_signal(int signal_num) {
     if (signal_num == SIGINT && instance != nullptr) {
         std::cout << "\n[Ctrl+C detected! Initiating graceful shut down...]\n";
-        instance->keep_running = false;
+        instance->running = false;
         ::shutdown(instance->sockfd, SHUT_RDWR);
+        instance->cv.notify_all();
         close(instance->sockfd);
     } 
 }
