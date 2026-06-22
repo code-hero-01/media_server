@@ -146,41 +146,86 @@ void Server::worker() {
 }
 
 void Server::handle_client(int client_fd, char* ipstr) {
-    std::this_thread::sleep_for(1s);
-    
-    std::string received_msg;
-    char buffer[1024];
     while (true) {
-        int bytes = recv(client_fd, buffer, sizeof(buffer), 0);
-        if (bytes == -1) {
-            cerr << "recv: " << std::strerror(errno) << "\n";
-            close(client_fd);
-            return;
-        }
-        if (bytes == 0) {
-            std::cout << "Client (" << ipstr << ") closed connection\n";
-            break;    
-        }
-        received_msg.append(buffer, bytes);
-        if (received_msg.find("\r\n\r\n") != std::string::npos) // break if we reach end of http request
+        pollfd pfd{};
+        pfd.fd = client_fd;
+        pfd.events = POLLIN;
+
+        int ret = poll(&pfd, 1, timeout*1000);
+        if (ret == -1) {
+            if (errno == EINTR)
+                continue;      // interrupted by signal
+
+            cerr << "poll: " << strerror(errno) << "\n";
             break;
-    }
-    
-    Request req(received_msg);
-    
-    if (debug == true) {
-        std::cerr << "Client (" << ipstr << ") sent: \n\n";
-        std::cerr << received_msg << "\n\n";
+        }
         
-        // std::cout << "Request type: " << req.method << "\n";
-        // std::cout << "Request path: " << req.path << "\n";
-        // std::cout << "Request version: " << req.version << "\n";   
-    }
+        if (ret == 0) { // timeout
+            log("connection timed out");
+            break;
+        } else {
+            if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL)) {
+                close(client_fd);
+                return;
+            }
+
+            if (!(pfd.revents & POLLIN))
+                continue;
+
+            std::string received_msg;
+            char buffer[1024];
+            while (true) {
+                int bytes = recv(client_fd, buffer, sizeof(buffer), 0);
+                if (bytes == -1) {
+                    cerr << "recv: " << std::strerror(errno) << "\n";
+                    close(client_fd);
+                    return;
+                }
+                if (bytes == 0) {
+                    log(string("Client (") + ipstr + ") closed connection");
+                    close(client_fd);
+                    return;    
+                }
+                received_msg.append(buffer, bytes);
+                if (received_msg.find("\r\n\r\n") != std::string::npos) // break if we reach end of http request
+                    break;
+            }
             
-    Response res = router(req);
-    string response_msg = res.serialize();
-    send_msg(client_fd, response_msg, ipstr);
-    
+            Request req(received_msg);
+            
+            if (debug == true) {
+                std::cerr << "Client (" << ipstr << ") sent: \n\n";
+                std::cerr << received_msg << "\n\n";
+                
+                // std::cout << "Request type: " << req.method << "\n";
+                // std::cout << "Request path: " << req.path << "\n";
+                // std::cout << "Request version: " << req.version << "\n";   
+            }
+                    
+            bool keep_alive = true; // http 1.1 is keep alive by default
+
+            if (req.has_header("Connection") && req.get_header("Connection") == "close")
+                keep_alive = false;
+            
+            
+            Response res = router(req);
+            
+            if (keep_alive) {
+                res.headers["Connection"] = "keep-alive";
+                res.headers["Keep-Alive"] = "timeout=" + std::to_string(timeout);
+            } else {
+                res.headers["Connection"] = "close";
+            }
+
+            string response_msg = res.serialize();
+            send_msg(client_fd, response_msg, ipstr);
+
+            if (!keep_alive) {
+                break;
+            }
+        }
+    }
+
     close(client_fd);
     log(string("disconnected from client (") + ipstr + ")");
 }
@@ -219,16 +264,17 @@ void Server::send_msg(int client_fd, const string& msg, char* ipstr) {
 
 Response Server::router(const Request& req)
 {
+    Response res;
     if (req.method != "GET") {
-        return Response(
+        res = Response(
             405,
             "text/html",
             "<h1>405 Method Not Allowed</h1>"
         );
     }
 
-    if (req.version != "HTTP/1.1") {
-        return Response(
+    else if (req.version != "HTTP/1.1") {
+        res = Response(
             505,
             "text/html",
             "<h1>505 HTTP Version Not Supported</h1>"
@@ -236,7 +282,7 @@ Response Server::router(const Request& req)
     }
 
     // homepage
-    if (req.path == "/") {
+    else if (req.path == "/") {
         string page;
         
         if (!file_handler::serve_template("./home", page)) 
@@ -245,30 +291,34 @@ Response Server::router(const Request& req)
         string content_list = file_handler::generate_content_list("./" + DIR_NAME);    
         file_handler::render_template(page, "{{CONTENT_LIST}}", content_list);
         file_handler::render_template(page, "{{DIR_NAME}}", "./" + DIR_NAME);
-        return Response(200, "text/html", page);
+        res = Response(200, "text/html", page);
     }
 
     // static file request
-    if (req.path.starts_with("/static/")) {
+    else if (req.path.starts_with("/static/")) {
         string path = file_handler::resolve_path(req.path);
         string content;
             if (!file_handler::serve_file(path, content)) 
                 return Response(404, "text/html", "<h1>404 Not Found</h1>");
 
-        return Response(200, file_handler::get_content_type(path), content);
+        res = Response(200, file_handler::get_content_type(path), content);
     }
 
     // file or folder request
-    if (req.path.starts_with("/" + DIR_NAME)) {
-        return handle_media_route(req);
+    else if (req.path.starts_with("/" + DIR_NAME)) {
+        res = handle_media_route(req);
     }
 
-    // template routes (/about, /contact, etc.)
-    string page;
-    if (!file_handler::serve_template(req.path.substr(1), page))
-        return Response(404, "text/html", "<h1>404 Not Found</h1>");
+    else {
+        // template routes (/about, /contact, etc.)
+        string page;
+        if (!file_handler::serve_template(req.path.substr(1), page))
+            return Response(404, "text/html", "<h1>404 Not Found</h1>");
 
-    return Response(200, "text/html", page);
+        res = Response(200, "text/html", page);
+    }
+
+    return res;
 }
 
 

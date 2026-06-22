@@ -11,6 +11,8 @@ private:
     string body;
 public:
     std::unordered_map<string, string> headers;
+    
+    Response() = default; // default construction
     Response(
         const int status, 
         const string& content_type, 

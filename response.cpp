@@ -8,7 +8,7 @@ Response::Response(
     : status(status), content_type(content_type), body(body) {}
 
 string Response::serialize() {
-     std::string reason;
+    std::string reason;
 
     switch (status)
     {
@@ -29,11 +29,9 @@ string Response::serialize() {
         response += key + ": " + value + "\r\n";
     }
 
-    response +=
-        "Connection: close\r\n"
-        "\r\n";
+    response += "\r\n";
 
-    //std::cout << response << "\n";
+    std::cout << response << "\n";
     
     response += body;
 

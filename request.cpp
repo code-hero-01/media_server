@@ -24,9 +24,13 @@ Request::Request(string raw_request) {
                 if (!val.empty() && val.front() == ' ')
                         val.erase(0, 1);
 
-                // remove trailing '\r'
+                // trim \r from key
+                if (!key.empty() && key.back() == '\r')
+                    key.pop_back();
+                
+                // time trailing '\r' from val
                 if (!val.empty() && val.back() == '\r')
-                        val.pop_back();
+                    val.pop_back();
                 headers[key] = val;
         }
 }

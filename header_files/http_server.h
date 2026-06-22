@@ -20,6 +20,9 @@
 #include <vector>
 #include <queue>
 #include <condition_variable>
+#include <poll.h>
+#include <fcntl.h>
+
 using namespace std::chrono_literals;
 using std::string;
 
@@ -42,6 +45,7 @@ private:
 
     int sockfd;
     int yes = 1;
+    int timeout = 5; // in seconds
     
     bool debug;
     std::atomic<bool> running{true};
