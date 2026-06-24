@@ -31,7 +31,7 @@ string Response::serialize() {
 
     response += "\r\n";
 
-    std::cout << response << "\n";
+    // std::cout << response << "\n";
     
     response += body;
 

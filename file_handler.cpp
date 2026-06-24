@@ -34,8 +34,8 @@ namespace file_handler {
     }
 
     // read binary data from a file in static
-    bool serve_file(const string& filepath, string& content, size_t start, size_t end) {
-        string path = decode_url(filepath);
+    bool serve_file(const string& file_path, string& content, size_t start, size_t end) {
+        string path = decode_url(file_path);
         std::ifstream file(path, std::ios::binary);
 
         if (!file.is_open()) {
@@ -60,6 +60,20 @@ namespace file_handler {
         return true;
     }
 
+    bool download_file(const string& file_path, const string& data){
+        std::ofstream file(file_path, std::ios::binary);
+
+        if (!file.is_open()) {
+            std::cerr << "Error: Could not open the file: " << file_path << "\n";
+            return false;
+        }
+
+        uint32_t length = static_cast<uint32_t>(data.size());
+        file.write(data.data(), length);
+        
+        file.close();
+        return true;
+    }
 
     string get_content_type(const string& filepath) {
         static const std::unordered_map<string, string> mime_types = {

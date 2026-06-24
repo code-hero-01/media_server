@@ -12,7 +12,6 @@
 #include <sys/wait.h>
 #include "request.h"
 #include "response.h"
-#include "file_handler.h"
 #include "filesystem"
 #include <thread>
 #include <atomic>
@@ -22,13 +21,16 @@
 #include <condition_variable>
 #include <poll.h>
 #include <fcntl.h>
+#include "logger.h"
+#include "http_connection.h"
+#include "router.h"
 
 using namespace std::chrono_literals;
 using std::string;
 
 struct Client {
     int fd;
-    char* ip;
+    string ip;
 
     Client() = default;
     Client(int fd, char* ip) {
@@ -50,22 +52,20 @@ private:
     bool debug;
     std::atomic<bool> running{true};
     
-    std::chrono::steady_clock::time_point start_time;
+    
     double duration{0};
 
     std::atomic<int> request_counter{0};
     inline static Server* instance = nullptr;
 
     std::queue<Client> client_q;
+    std::mutex q_mutex;
     std::condition_variable cv;
     
-    void handle_client(int client_fd, char* ipstr);    
+    void handle_client(int client_fd, const string& client_ip);    
     Response router(const Request& req);
     Response handle_media_route(const Request& req);
-    void send_msg(int client_fd, const string& msg, char* ipstr);
     void* get_in_addr(struct sockaddr *sa);
-    static bool check(int result, string& err_msg);
-    void log(string msg) const;
 public:
     Server(string port, string dir_name, bool debug=false);
     

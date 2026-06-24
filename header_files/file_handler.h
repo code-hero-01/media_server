@@ -18,6 +18,7 @@ namespace file_handler {
     bool serve_template(const string& filename, string& page);
     void render_template(string& html, const string& key, const string& content);
     bool serve_file(const string& file_path, string& content, size_t start = 0, size_t end = SIZE_MAX);
+    bool download_file(const string& file_path, const string& data);
     string get_content_type(const string& file_path);
     string generate_content_list(const std::string& name);
     string decode_url(const std::string& str);
