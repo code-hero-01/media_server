@@ -6,7 +6,7 @@ using std::cerr;
 
 // constructor
 Server::Server(string port, string dir_name, bool debug) 
-    : PORT(port), DIR_NAME(dir_name), debug(debug) {
+    : PORT(port), ROOT(dir_name), debug(debug) {
         instance = this;
         
         // Prevent SIGPIPE from terminating the server when a client disconnects
@@ -144,7 +144,9 @@ void Server::worker() {
 }
 
 void Server::handle_client(int client_fd, const string& client_ip) {
-    while (true) {
+    HttpConnection conn(client_fd, client_ip);
+    // auto last_activity = std::chrono::steady_clock::now();
+    while (true) {        
         pollfd pfd{};
         pfd.fd = client_fd;
         pfd.events = POLLIN;
@@ -154,12 +156,16 @@ void Server::handle_client(int client_fd, const string& client_ip) {
             if (errno == EINTR)
                 continue;      // interrupted by signal
 
-            cerr << "poll: " << strerror(errno) << "\n";
+            logger.log("poll: ", strerror(errno), "\n");
+            close(client_fd);
+            logger.log("disconnected from client (", client_ip, ")");
             break;
         }
         
         if (ret == 0) { // timeout
-            logger.log("connection timed out");
+            logger.log("idle time out after ", timeout, "s");
+            close(client_fd);
+            logger.log("disconnected from client (", client_ip, ")");
             break;
         } else {
             if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL)) {
@@ -170,20 +176,22 @@ void Server::handle_client(int client_fd, const string& client_ip) {
             if (!(pfd.revents & POLLIN))
                 continue;
 
-            HttpConnection conn(client_fd, client_ip);
             std::optional<Request> req_opt = conn.read_request();
 
-            if (!req_opt.has_value())
+            if (!req_opt.has_value()) {
+                close(client_fd);
+                logger.log("disconnected from client (", client_ip, ")");
                 break;
+            }
             Request req = req_opt.value();
+            //last_activity = std::chrono::steady_clock::now();   
                  
             bool keep_alive = true; // http 1.1 is keep alive by default
 
             if (req.has_header("Connection") && req.get_header("Connection") == "close")
                 keep_alive = false;
             
-            Router router(DIR_NAME);
-            Response res = router.route(req);
+            Response res = m_router.route(req);
             
             if (keep_alive) {
                 res.headers["Connection"] = "keep-alive";
@@ -194,15 +202,15 @@ void Server::handle_client(int client_fd, const string& client_ip) {
 
             string response_msg = res.serialize();
             conn.send_response(response_msg);
+            //last_activity = std::chrono::steady_clock::now();
 
             if (!keep_alive) {
+                close(client_fd);
+                logger.log("disconnected from client (", client_ip, ")");
                 break;
             }
         }
     }
-
-    close(client_fd);
-    logger.log("disconnected from client (", client_ip, ")");
 }
 
 void* Server::get_in_addr(struct sockaddr *sa) {

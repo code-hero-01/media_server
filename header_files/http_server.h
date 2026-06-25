@@ -42,16 +42,16 @@ struct Client {
 class Server {
 private:
     const string PORT;
-    const string DIR_NAME; // directory to serve
+    const string ROOT; // directory to serve
     const unsigned int NUM_THREADS = 10;
 
     int sockfd;
     int yes = 1;
     int timeout = 5; // in seconds
+    Router m_router{ROOT};
     
     bool debug;
     std::atomic<bool> running{true};
-    
     
     double duration{0};
 

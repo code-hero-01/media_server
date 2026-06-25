@@ -14,6 +14,7 @@ string Response::serialize() {
     {
         case 200: reason = "OK"; break;
         case 206: reason = "Partial Content"; break;
+        case 303: reason = "See Other"; break;
         case 404: reason = "Not Found"; break;
         case 405: reason = "Method Not Allowed"; break;
         case 505: reason = "HTTP Version Not Supported"; break;

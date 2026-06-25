@@ -8,7 +8,15 @@
 	<body>
 		<div>
             <h1>{{BREADCRUMBS}}</h1>
-    		{{CONTENT_LIST}}
+    		<form action="{{CURR_DIR}}/upload" method="post" enctype="multipart/form-data">
+				<input type="file" name="file">
+				<input type="submit" value="upload">
+			</form>
+			<form action="{{CURR_DIR}}/mkdir" method="post" enctype="multipart/form-data">
+				<input type="text" name="mkdir">
+				<input type="submit" value="create folder">
+			</form>
+			{{CONTENT_LIST}}
 		</div>
 	</body>
 </html>

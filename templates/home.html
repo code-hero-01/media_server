@@ -9,12 +9,17 @@
 		<h1>home</h1>
 		<img src="/static/lain-dance.gif" alt="lain bustin it down, surreal style">
 		
-		<form action="/upload" method="post" enctype="multipart/form-data">
+		<form action="{{CURR_DIR}}/upload" method="post" enctype="multipart/form-data">
 			<input type="file" name="file">
 			<input type="submit" value="upload">
 		</form>
 
-		<h2>directory listing for {{DIR_NAME}}</h2>
+		<form action="{{CURR_DIR}}/mkdir" method="post" enctype="multipart/form-data">
+			<input type="text" name="mkdir">
+			<input type="submit" value="create folder">
+		</form>
+
+		<h2>directory listing for {{ROOT}}</h2>
 		<div>
     		{{CONTENT_LIST}}
 		</div>

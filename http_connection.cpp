@@ -36,13 +36,11 @@ std::optional<Request> HttpConnection::read_request() {
         while (req.body.size() < content_length) {
             int bytes = recv(client_fd, buffer, sizeof(buffer), 0);         
             if (bytes == -1) {             
-                logger.log("recv: ", std::strerror(errno));             
-                close(client_fd);             
+                logger.log("recv: ", std::strerror(errno));                          
                 return std::nullopt;
             }         
             if (bytes == 0) {             
-                logger.log(string("Client ("), client_ip, ") closed connection");             
-                close(client_fd);             
+                logger.log(string("Client ("), client_ip, ") closed connection");                          
                 return std::nullopt; 
             }         
             
