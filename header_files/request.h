@@ -20,13 +20,24 @@ struct Request {
     string get_header(const string& name) const;
 };
 
-struct FormData {
+struct MultipartForm {
     string name;
     string filename;
     string content_type;
     string data;
 
-    FormData(const string& body);
+    MultipartForm(const string& body);
 private:
     string get_param(const string& header, const string& param_name);
 };
+
+struct UrlEncodedForm {
+    std::unordered_map<string, string> fields;
+
+    UrlEncodedForm(const string& body);
+
+    bool has_field(const string& key) const;
+    string get_field(const string& key) const;
+};
+
+string decode_url(const string& str);

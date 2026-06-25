@@ -39,8 +39,14 @@ Response Router::route(const Request& req)
         if (req.path.ends_with("/upload")) {
             return handle_upload(req);
         }
-        if (req.path.ends_with("/mkdir")) {
+        else if (req.path.ends_with("/mkdir")) {
             return handle_mkdir(req);
+        }
+        else if (req.path.ends_with("/delete")) {
+            return handle_delete(req);
+        }
+        else if (req.path.ends_with("/rename")) {
+            return handle_rename(req);
         }
         else 
             return Response(405, "text/html", "<h1>405 Method Not Allowed</h1>");
@@ -153,7 +159,7 @@ Response Router::handle_media(const Request& req, const string& fs_root) {
 }
 
 Response Router::handle_upload(const Request& req) {
-    FormData form(req.body);
+    MultipartForm form(req.body);
     
     string url_dir = req.path.substr(0, req.path.size() - 7); // remove "/upload"
     string dest_dir;
@@ -178,7 +184,7 @@ Response Router::handle_upload(const Request& req) {
 }
 
 Response Router::handle_mkdir(const Request& req) {
-    FormData form(req.body);
+    MultipartForm form(req.body);
     
     string url_dir = req.path.substr(0, req.path.size() - 6); // remove "/mkdir"
     string dest_dir;
@@ -189,7 +195,7 @@ Response Router::handle_mkdir(const Request& req) {
         return Response(403, "text/html", "<h1>403 Forbidden</h1>");
     }
     
-    string dir_name = file_handler.decode_url(form.data);
+    string dir_name = decode_url(form.data);
     string path = dest_dir + '/' + dir_name;
 
     if (!file_handler.mkdir(path)) {
@@ -199,5 +205,66 @@ Response Router::handle_mkdir(const Request& req) {
     logger.log("\"", form.data, "\" directory creatory succesffuly in \"", dest_dir, "\"");
     Response res(303, "text/plain", "");
     res.headers["Location"] = url_dir;
+    return res;
+}
+
+Response Router::handle_delete(const Request& req) {
+    string url_path = req.path.substr(0, req.path.size() - 7); // remove "/delete"
+    string path;
+    try {
+        path = file_handler.resolve_path(url_path, ROOT);
+    } catch (const std::exception& e) {
+        std::cerr << "file resolution error: " << e.what() << "\n";
+        return Response(403, "text/html", "<h1>403 Forbidden</h1>");
+    }
+
+    if (!file_handler.delete_file(path))  {
+        logger.log("failed to delete: \"", path, "\"");
+        return Response(500, "text/html", "<h1>500 Internal Server Error</h1>");
+    }
+    logger.log("\"", path, "\" successfully deleted");
+    Response res(303, "text/plain", "");
+    
+    fs::path parent_url = fs::path(url_path).parent_path();
+    res.headers["Location"] = parent_url.string();
+    return res;
+}
+
+Response Router::handle_rename(const Request& req) {
+    string url_path = req.path.substr(0, req.path.size() - 7); // remove "/rename"
+    string old_path;
+    try {
+        old_path = file_handler.resolve_path(url_path, ROOT);
+    } catch (const std::exception& e) {
+        std::cerr << "file resolution error: " << e.what() << "\n";
+        return Response(403, "text/html", "<h1>403 Forbidden</h1>");
+    }
+
+    fs::path parent_url = fs::path(url_path).parent_path();
+
+    UrlEncodedForm form(req.body);
+    string new_name;
+    if (form.has_field("new_name")) 
+        new_name = form.get_field("new_name");
+    else
+        return Response(400, "text/html", "<h1>400 Bad Request</h1>");
+
+    string new_path = parent_url.string() + "/" + new_name;
+    std::cout << new_path;
+    try {
+        new_path = file_handler.resolve_path(new_path, ROOT);
+    } catch (const std::exception& e) {
+        std::cerr << "file resolution error: " << e.what() << "\n";
+        return Response(403, "text/html", "<h1>403 Forbidden</h1>");
+    }
+
+    if (!file_handler.rename_file(old_path, new_path)) {
+        logger.log("failed to rename: \"", old_path, "\" to \"", new_name, "\"");
+        return Response(500, "text/html", "<h1>500 Internal Server Error</h1>");
+    }
+    logger.log("\"", old_path, "\" successfully renamed to \"", new_name, "\"");
+    Response res(303, "text/plain", "");
+    
+    res.headers["Location"] = parent_url.string();
     return res;
 }

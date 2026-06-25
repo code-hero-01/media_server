@@ -86,6 +86,24 @@ bool FileHandler::mkdir(const string& dir_path) {
     return false;
 }
 
+bool FileHandler::delete_file(const string& path) {
+    try {
+        fs::remove(path); 
+        return true;
+    } catch (const fs::filesystem_error& e) {
+        return false;
+    }
+}
+
+bool FileHandler::rename_file(const string& old_path, const string& new_path) {
+    try {
+        fs::rename(old_path, new_path); 
+        return true;
+    } catch (const fs::filesystem_error& e) {
+        return false;
+    }
+}
+
 string FileHandler::get_content_type(const string& filepath) {
     static const std::unordered_map<string, string> mime_types = {
         {".html", "text/html"},
@@ -125,11 +143,26 @@ string FileHandler::generate_dir_listing(const string& dir_path) {
                 continue;
             
             if (entry.is_directory()) { // indent subdirectories
-                html += "<li style=\"margin-left: 40px;\"><a href=\"" + filepath + "\">" + filename + "</a></li>";
+                html += "<li style=\"display:flex; gap:10px; align-items:center; margin-left: 40px;\"><a href=\"" + filepath + "\">" + filename + "</a>";
             }
             else {
-                html += "<li><a href=\"" + filepath + "\">" + filename + "</a></li>";
+                html += "<li style=\"display:flex; gap:10px; align-items:center;\"><a href=\"" + filepath + "\">" + filename + "</a>";
             }
+
+            // rename button
+            html+= "<button href=\"#\""
+                    "type=\"button\""
+                    "onclick=\"renameFile('" + filepath + "'); event.preventDefault();\">"
+                    "Rename"
+                    "</button>";
+
+            // delete button
+            html+= "<form action=\"" + filepath + "/delete\""
+                    "method=\"post\""
+                    "onsubmit=\"return confirm('Delete " + filename + "?');\">"
+                    "<button type=\"submit\">Delete</button>"
+                    "</form>";
+            html += "</li>"; 
         }
     } else {
         std::cerr << "Directory: ./" << dir_path << " does not exist or is invalid.\n";
@@ -164,7 +197,7 @@ string FileHandler::resolve_path(
     if (requested.string().rfind(root_dir.string(), 0) != 0) {
         throw std::runtime_error("path traversal");
     }
-    std::cout << requested << "\n";
+    // std::cout << requested << "\n";
     return requested;   
 }
 

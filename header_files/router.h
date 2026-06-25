@@ -20,6 +20,8 @@ private:
     Response handle_media(const Request& req, const string& fs_root);
     Response handle_upload(const Request& req);
     Response handle_mkdir(const Request& req);
+    Response handle_delete(const Request& req);
+    Response handle_rename(const Request& req);
 public:
     Router(const string& dir_name);
     Response route(const Request& req);

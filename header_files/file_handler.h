@@ -7,6 +7,7 @@ using std::string;
 #include <iostream>
 #include <filesystem>
 #include "logger.h"
+#include "request.h"
 namespace fs = std::filesystem;
 
 struct ByteRange {
@@ -27,6 +28,8 @@ public:
     bool serve_file(const string& file_path, string& content, size_t start = 0, size_t end = SIZE_MAX);
     bool download_file(const string& file_path, const string& data);
     bool mkdir(const string& dir_path);
+    bool delete_file(const string& path);
+    bool rename_file(const string& old_path, const string& new_path);
     
     string get_content_type(const string& file_path);
     

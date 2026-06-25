@@ -48,7 +48,7 @@ string Request::get_header(const string& name) const {
         return "";
 }
 
-FormData::FormData(const string& body) {
+MultipartForm::MultipartForm(const string& body) {
         // find first boundary and skip past it
         size_t pos = body.find("--");
         if (pos == string::npos) return;
@@ -81,7 +81,7 @@ FormData::FormData(const string& body) {
         //std::cout << name << " " << filename << " " << content_type << "\n";
 }
 
-string FormData::get_param(const string& header, const string& param_name) {
+string MultipartForm::get_param(const string& header, const string& param_name) {
         auto start_pos = header.find(param_name + "=\"");
         if (start_pos == string::npos) return "";
         start_pos += param_name.size() + 2; // skip param="
@@ -90,4 +90,47 @@ string FormData::get_param(const string& header, const string& param_name) {
         if (end_pos == std::string::npos) return "";
 
         return header.substr(start_pos, end_pos - start_pos);
+}
+
+UrlEncodedForm::UrlEncodedForm(const string& body) {
+        std::istringstream stream(body);
+        string pair;
+        while (std::getline(stream, pair)) {
+                size_t pos = pair.find('=');
+                if (pos == string::npos) continue;
+
+                fields[decode_url(pair.substr(0, pos))] = pair.substr(pos+1);
+        }
+}
+
+bool UrlEncodedForm::has_field(const string& key) const {
+        return fields.contains(key);
+}
+
+string UrlEncodedForm::get_field(const string& key) const {
+        auto it = fields.find(key);
+
+        if (it != fields.end())
+                return it->second;
+        
+        return "";
+}
+
+string decode_url(const string& str) {
+    std::string result;
+
+    for (size_t i = 0; i < str.size(); i++) {
+        if (str[i] == '%' && i + 2 < str.size()) {
+            std::string hex = str.substr(i + 1, 2);
+            char decoded_char = static_cast<char>(std::stoi(hex, nullptr, 16));
+            result += decoded_char;
+            i += 2;
+        }
+        else if (str[i] == '+')
+            result += ' ';
+        else
+            result += str[i];
+    }
+
+    return result;
 }
