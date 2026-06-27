@@ -1,5 +1,5 @@
-function renameFile(path) {
-    const newName = prompt("New filename:");
+function renameFile(path, curr_name) {
+    const newName = prompt("New name:", curr_name);
 
     if (!newName)
         return;

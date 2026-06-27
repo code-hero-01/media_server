@@ -4,8 +4,8 @@
 Response::Response(
     const int status, 
     const string& content_type, 
-    const string& body) 
-    : status(status), content_type(content_type), body(body) {}
+    const string& text) 
+    : status(status), content_type(content_type), text(text) {}
 
 string Response::serialize() {
     std::string reason;
@@ -21,21 +21,26 @@ string Response::serialize() {
         case 505: reason = "HTTP Version Not Supported"; break;
         default:  reason = "Unknown";
     }
+    
+    if (!is_file) 
+        content_length = text.size();
         
     string response =
         "HTTP/1.1 " + std::to_string(status) + " " + reason + "\r\n"
         "Content-Type: " + content_type + "\r\n"
-        "Content-Length: " + std::to_string(body.size()) + "\r\n";
+        "Content-Length: " + std::to_string(content_length) + "\r\n";
 
     for (const auto& [key, value] : headers) {
         response += key + ": " + value + "\r\n";
     }
 
     response += "\r\n";
+    headers_text = response;
 
-    // std::cout << response << "\n";
+    // std::cout << headers_text << "\n";
     
-    response += body;
-
+    if (!is_file) 
+        response += text;
+    
     return response;
 }

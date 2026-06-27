@@ -64,13 +64,13 @@ Response Router::route(const Request& req)
 Response Router::handle_home(const Request& req) {
     string page;
         
-    if (!file_handler.serve_template("templates/home.html", page)) 
+    if (!file_handler::read_template("templates/home.html", page)) 
         return Response(404, "text/html", "<h1>404 Not Found</h1>");
     
-    string content_list = file_handler.generate_dir_listing("./" + ROOT);
-    file_handler.render_template(page, "{{ROOT}}", "./" + ROOT);
-    file_handler.render_template(page, "{{CURR_DIR}}", "./" + ROOT);    
-    file_handler.render_template(page, "{{CONTENT_LIST}}", content_list);
+    string content_list = file_handler::generate_dir_listing("./" + ROOT, ROOT);
+    file_handler::render_template(page, "{{ROOT}}", "./" + ROOT);
+    file_handler::render_template(page, "{{CURR_DIR}}", "./" + ROOT);    
+    file_handler::render_template(page, "{{CONTENT_LIST}}", content_list);
     
     return Response(200, "text/html", page);
 }
@@ -80,62 +80,59 @@ Response Router::handle_template(const Request& req) {
     string path = "/templates" + req.path + ".html";
     try {
         //logger.log("req.path = ", req.path);
-        path = file_handler.resolve_path(path, "templates");
+        path = file_handler::resolve_path(path, "templates");
     } catch (const std::exception& e) {
         std::cerr << "file resolution error: " << e.what() << "\n";
         return Response(403, "text/html", "<h1>403 Forbidden</h1>");
     }
 
-    if (!file_handler.serve_template(path, page))
+    if (!file_handler::read_template(path, page))
         return Response(404, "text/html", "<h1>404 Not Found</h1>");
 
     return Response(200, "text/html", page);
 }
 
-Response Router::handle_static(const Request& req) {
-    string path = "./" + (req.path);
-    string content;
-    if (!file_handler.serve_file(path, content)) 
-        return Response(404, "text/html", "<h1>404 Not Found</h1>");
-
-    return Response(200, file_handler.get_content_type(path), content);
-}
 
 Response Router::handle_media(const Request& req, const string& fs_root) {
     string path;
     try {
         //logger.log("req.path = ", req.path);
-        path = file_handler.resolve_path(req.path, fs_root);
+        path = file_handler::resolve_path(req.path, fs_root);
     } catch (const std::exception& e) {
         std::cerr << "file resolution error: " << e.what() << "\n";
         return Response(403, "text/html", "<h1>403 Forbidden</h1>");
     }
     
+    if (!fs::exists(path)) {
+        logger.log("\"", path, "\" does not exit\n");
+        return Response(400, "text/html", "<h1>404 Not Found<h1>");
+    } 
+
     if (std::filesystem::is_directory(path)) {  // if directory is requested
         string page;
-        if (!file_handler.serve_template("templates/subdir.html", page)) 
+        if (!file_handler::read_template("templates/subdir.html", page)) 
             return Response(404, "text/html", "<h1>404 Not Found</h1>");
         
-        string breadcrumbs = file_handler.generate_breadcrumbs(req.path);
-        file_handler.render_template(page, "{{BREADCRUMBS}}", breadcrumbs);
+        string breadcrumbs = file_handler::generate_breadcrumbs(decode_url(req.path));
+        file_handler::render_template(page, "{{BREADCRUMBS}}", breadcrumbs);
         
-        file_handler.render_template(page, "{{CURR_DIR}}", req.path);
+        file_handler::render_template(page, "{{CURR_DIR}}", req.path);
 
-        string content_list = file_handler.generate_dir_listing(path);
-        file_handler.render_template(page, "{{CONTENT_LIST}}", content_list);
+        string content_list = file_handler::generate_dir_listing(path, ROOT);
+        file_handler::render_template(page, "{{CONTENT_LIST}}", content_list);
         
         return Response(200, "text/html", page);
     }    
     else {  // if file is requested
         string content;
         if (req.has_header("Range")) { // partial response
-            size_t file_size = file_handler.get_file_size(path);
-            ByteRange range = file_handler.parse_range(req.get_header("Range"), file_size);
+            size_t file_size = file_handler::get_file_size(path);
+            ByteRange range = file_handler::parse_range(req.get_header("Range"), file_size);
             
-            if (!range.valid || !file_handler.serve_file(path, content, range.start, range.end)) 
-                return Response(404, "text/html", "<h1>404 Not Found</h1>");
+            if (!range.valid)  
+                return Response(400, "text/html", "<h1>400 Bad Request</h1>");
             
-            Response res(206, file_handler.get_content_type(path), content);
+            Response res(206, file_handler::get_content_type(path), content);
 
             res.headers["Accept-Ranges"] = "bytes";
             res.headers["Content-Range"] =
@@ -146,14 +143,22 @@ Response Router::handle_media(const Request& req, const string& fs_root) {
                 + "/"
                 + std::to_string(file_size);
 
+            res.is_file = true;
+            res.start = range.start;
+            res.end = range.end;
+            res.path = path;    
+            res.content_length = range.end - range.start + 1;
             return res;
         }   
         else {
+            // if (!file_handler::read_file(path, content)) 
+            //     return Response(404, "text/html", "<h1>404 Not Found</h1>");
 
-            if (!file_handler.serve_file(path, content)) 
-                return Response(404, "text/html", "<h1>404 Not Found</h1>");
-
-            return Response(200, file_handler.get_content_type(path), content);
+            Response res(200, file_handler::get_content_type(path), content);
+            res.is_file = true;
+            res.path = path;
+            res.content_length = file_handler::get_file_size(path);
+            return res;
         }
     }
 }
@@ -164,7 +169,7 @@ Response Router::handle_upload(const Request& req) {
     string url_dir = req.path.substr(0, req.path.size() - 7); // remove "/upload"
     string dest_dir;
     try {
-        dest_dir = file_handler.resolve_path(url_dir, ROOT);
+        dest_dir = file_handler::resolve_path(url_dir, ROOT);
     } catch (const std::exception& e) {
         std::cerr << "file resolution error: " << e.what() << "\n";
         return Response(403, "text/html", "<h1>403 Forbidden</h1>");
@@ -173,7 +178,7 @@ Response Router::handle_upload(const Request& req) {
     fs::path filename = fs::path(form.filename).filename();
     string path = dest_dir + '/' + form.filename;
 
-    if (!file_handler.download_file(path, form.data)) {
+    if (!file_handler::download_file(path, form.data)) {
         logger.log("failed to download \"", form.filename, "\"");
         return Response(500, "text/html", "<h1>500 Internal Server Error</h1>");
     }
@@ -189,7 +194,7 @@ Response Router::handle_mkdir(const Request& req) {
     string url_dir = req.path.substr(0, req.path.size() - 6); // remove "/mkdir"
     string dest_dir;
     try {
-        dest_dir = file_handler.resolve_path(url_dir, ROOT);
+        dest_dir = file_handler::resolve_path(url_dir, ROOT);
     } catch (const std::exception& e) {
         std::cerr << "file resolution error: " << e.what() << "\n";
         return Response(403, "text/html", "<h1>403 Forbidden</h1>");
@@ -198,7 +203,7 @@ Response Router::handle_mkdir(const Request& req) {
     string dir_name = decode_url(form.data);
     string path = dest_dir + '/' + dir_name;
 
-    if (!file_handler.mkdir(path)) {
+    if (!file_handler::mkdir(path)) {
         logger.log("failed to create directory \"", dir_name, "\"");
         return Response(500, "text/html", "<h1>500 Internal Server Error</h1>");
     }
@@ -212,13 +217,13 @@ Response Router::handle_delete(const Request& req) {
     string url_path = req.path.substr(0, req.path.size() - 7); // remove "/delete"
     string path;
     try {
-        path = file_handler.resolve_path(url_path, ROOT);
+        path = file_handler::resolve_path(url_path, ROOT);
     } catch (const std::exception& e) {
         std::cerr << "file resolution error: " << e.what() << "\n";
         return Response(403, "text/html", "<h1>403 Forbidden</h1>");
     }
 
-    if (!file_handler.delete_file(path))  {
+    if (!file_handler::delete_file(path))  {
         logger.log("failed to delete: \"", path, "\"");
         return Response(500, "text/html", "<h1>500 Internal Server Error</h1>");
     }
@@ -234,7 +239,7 @@ Response Router::handle_rename(const Request& req) {
     string url_path = req.path.substr(0, req.path.size() - 7); // remove "/rename"
     string old_path;
     try {
-        old_path = file_handler.resolve_path(url_path, ROOT);
+        old_path = file_handler::resolve_path(url_path, ROOT);
     } catch (const std::exception& e) {
         std::cerr << "file resolution error: " << e.what() << "\n";
         return Response(403, "text/html", "<h1>403 Forbidden</h1>");
@@ -252,13 +257,13 @@ Response Router::handle_rename(const Request& req) {
     string new_path = parent_url.string() + "/" + new_name;
     std::cout << new_path;
     try {
-        new_path = file_handler.resolve_path(new_path, ROOT);
+        new_path = file_handler::resolve_path(new_path, ROOT);
     } catch (const std::exception& e) {
         std::cerr << "file resolution error: " << e.what() << "\n";
         return Response(403, "text/html", "<h1>403 Forbidden</h1>");
     }
 
-    if (!file_handler.rename_file(old_path, new_path)) {
+    if (!file_handler::rename_file(old_path, new_path)) {
         logger.log("failed to rename: \"", old_path, "\" to \"", new_name, "\"");
         return Response(500, "text/html", "<h1>500 Internal Server Error</h1>");
     }

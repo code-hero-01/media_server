@@ -3,12 +3,13 @@
 // constructor
 Request::Request(const string& raw_request) {
         std::istringstream stream(raw_request);
+        std::cout << raw_request << "\n";
 
         string line;
         std::getline(stream, line);
 
         std::istringstream request_line(line);
-
+ 
         request_line >> method
                 >> path
                 >> version;
@@ -33,6 +34,10 @@ Request::Request(const string& raw_request) {
                     val.pop_back();
                 headers[key] = val;
         }
+
+        // for (const auto& [key, val] : headers) {
+        //         std::cout << key << ": " << val << "\n";
+        // }
 }
 
 bool Request::has_header(const string& name) const {

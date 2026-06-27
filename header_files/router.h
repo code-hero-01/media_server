@@ -12,8 +12,7 @@ using std::string;
 class Router {
 private:
     const string& ROOT;
-    FileHandler file_handler{ROOT};
-
+    
     Response handle_home(const Request& req);
     Response handle_template(const Request& req);
     Response handle_static(const Request& req);

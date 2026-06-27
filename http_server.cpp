@@ -200,9 +200,9 @@ void Server::handle_client(int client_fd, const string& client_ip) {
                 res.headers["Connection"] = "close";
             }
 
-            string response_msg = res.serialize();
-            conn.send_response(response_msg);
+            conn.send_response(res);
             //last_activity = std::chrono::steady_clock::now();
+
 
             if (!keep_alive) {
                 close(client_fd);
