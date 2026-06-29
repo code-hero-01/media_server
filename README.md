@@ -2,10 +2,10 @@
 
 A self-hosted multithraded http server written in C++.
 
-- Serves text, image, music and video files from specified directory over HTTP
+- Streams text, image, music and video files from a specified directory over HTTP
+- Upload files, create new folders, delete files, rename files
 - Uses POSIX TCP sockets
-- Support seeking in media files (supports http range requests)
-- Multithreaded
+- Multithreaded architecture using thread pool
 
 ## Build and Installation   
 

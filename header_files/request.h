@@ -20,16 +20,6 @@ struct Request {
     string get_header(const string& name) const;
 };
 
-struct MultipartForm {
-    string name;
-    string filename;
-    string content_type;
-    string data;
-
-    MultipartForm(const string& body);
-private:
-    string get_param(const string& header, const string& param_name);
-};
 
 struct UrlEncodedForm {
     std::unordered_map<string, string> fields;

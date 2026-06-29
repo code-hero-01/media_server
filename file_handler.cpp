@@ -89,9 +89,11 @@ namespace file_handler {
             {".mp4",  "video/mp4"}
         };
         
-        auto ext = filepath.substr(filepath.find_last_of('.'));
+        size_t dot_pos = filepath.find_last_of('.');
+        if (dot_pos == string::npos) 
+            return "application/octet-stream"; 
 
-        auto it = mime_types.find(ext);
+        auto it = mime_types.find(filepath.substr(dot_pos));
 
         if (it != mime_types.end())
             return it->second;
@@ -191,7 +193,7 @@ namespace file_handler {
 
     string generate_breadcrumbs(const string& url_path) {
         string html;
-        std::cout << url_path << "\n";
+        // std::cout << url_path << "\n";
         std::istringstream ss(url_path);
         string segment;
         string current_path;

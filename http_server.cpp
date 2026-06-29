@@ -144,7 +144,7 @@ void Server::worker() {
 }
 
 void Server::handle_client(int client_fd, const string& client_ip) {
-    HttpConnection conn(client_fd, client_ip);
+    HttpConnection conn(client_fd, client_ip, ROOT);
     // auto last_activity = std::chrono::steady_clock::now();
     while (true) {        
         pollfd pfd{};
@@ -172,12 +172,10 @@ void Server::handle_client(int client_fd, const string& client_ip) {
                 close(client_fd);
                 return;
             }
-
             if (!(pfd.revents & POLLIN))
                 continue;
 
             std::optional<Request> req_opt = conn.read_request();
-
             if (!req_opt.has_value()) {
                 close(client_fd);
                 logger.log("disconnected from client (", client_ip, ")");
@@ -191,7 +189,7 @@ void Server::handle_client(int client_fd, const string& client_ip) {
             if (req.has_header("Connection") && req.get_header("Connection") == "close")
                 keep_alive = false;
             
-            Response res = m_router.route(req);
+            Response res = m_router.route(req, conn);
             
             if (keep_alive) {
                 res.headers["Connection"] = "keep-alive";
@@ -202,7 +200,6 @@ void Server::handle_client(int client_fd, const string& client_ip) {
 
             conn.send_response(res);
             //last_activity = std::chrono::steady_clock::now();
-
 
             if (!keep_alive) {
                 close(client_fd);

@@ -13,10 +13,12 @@
 				<input type="file" name="file">
 				<input type="submit" value="upload">
 			</form>
-			<form action="{{CURR_DIR}}/mkdir" method="post" enctype="multipart/form-data">
-				<input type="text" name="mkdir">
+
+			<form action="{{CURR_DIR}}/mkdir" method="post">
+				<input type="text" name="folder_name">
 				<input type="submit" value="create folder">
 			</form>
+
 			{{CONTENT_LIST}}
 		</div>
 	</body>

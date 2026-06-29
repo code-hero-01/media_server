@@ -3,7 +3,7 @@
 Router::Router(const string& root_dir) :
     ROOT(root_dir) {}
 
-Response Router::route(const Request& req)
+Response Router::route(const Request& req, HttpConnection& conn)
 {
     if (req.version != "HTTP/1.1") {
         return Response(
@@ -37,7 +37,7 @@ Response Router::route(const Request& req)
 
     if (req.method == "POST") {
         if (req.path.ends_with("/upload")) {
-            return handle_upload(req);
+            return handle_upload(req, conn);
         }
         else if (req.path.ends_with("/mkdir")) {
             return handle_mkdir(req);
@@ -163,8 +163,12 @@ Response Router::handle_media(const Request& req, const string& fs_root) {
     }
 }
 
-Response Router::handle_upload(const Request& req) {
-    MultipartForm form(req.body);
+Response Router::handle_upload(const Request& req, HttpConnection& conn) {
+    MultipartParser parser(conn);
+    if (!parser.set_boundary(req) || !parser.read_subheaders()) {
+        logger.log("bad upload request");
+        return Response(400, "text/html", "<h1>400 Bad Request</h1>");
+    }
     
     string url_dir = req.path.substr(0, req.path.size() - 7); // remove "/upload"
     string dest_dir;
@@ -175,22 +179,21 @@ Response Router::handle_upload(const Request& req) {
         return Response(403, "text/html", "<h1>403 Forbidden</h1>");
     }
     
-    fs::path filename = fs::path(form.filename).filename();
-    string path = dest_dir + '/' + form.filename;
+    string filename = fs::path(parser.filename).filename().string();
+    string path = dest_dir + '/' + filename;
+    logger.log("Downloading '", filename, "' to '", dest_dir, "'...");
 
-    if (!file_handler::download_file(path, form.data)) {
-        logger.log("failed to download \"", form.filename, "\"");
+    if (!parser.stream_to(path)) {
+        logger.log("failed to download '", filename, "'");
         return Response(500, "text/html", "<h1>500 Internal Server Error</h1>");
     }
-    logger.log("\"", form.filename, "\" downloaded successfully to \"", dest_dir, "\"");
+    logger.log("'", filename, "' downloaded successfully to '", dest_dir, "'");
     Response res(303, "text/plain", "");
     res.headers["Location"] = url_dir;
     return res;    
 }
 
 Response Router::handle_mkdir(const Request& req) {
-    MultipartForm form(req.body);
-    
     string url_dir = req.path.substr(0, req.path.size() - 6); // remove "/mkdir"
     string dest_dir;
     try {
@@ -200,14 +203,20 @@ Response Router::handle_mkdir(const Request& req) {
         return Response(403, "text/html", "<h1>403 Forbidden</h1>");
     }
     
-    string dir_name = decode_url(form.data);
+    UrlEncodedForm form(req.body);
+    string dir_name;
+    if (form.has_field("folder_name")) 
+        dir_name = form.get_field("folder_name");
+    else
+        return Response(400, "text/html", "<h1>400 Bad Request</h1>");
+
     string path = dest_dir + '/' + dir_name;
 
     if (!file_handler::mkdir(path)) {
-        logger.log("failed to create directory \"", dir_name, "\"");
+        logger.log("failed to create directory '", dir_name, "'");
         return Response(500, "text/html", "<h1>500 Internal Server Error</h1>");
     }
-    logger.log("\"", form.data, "\" directory creatory succesffuly in \"", dest_dir, "\"");
+    logger.log("'", dir_name, "' directory creatory succesffuly in '", dest_dir, "'");
     Response res(303, "text/plain", "");
     res.headers["Location"] = url_dir;
     return res;
