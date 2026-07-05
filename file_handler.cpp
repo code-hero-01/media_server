@@ -6,7 +6,7 @@ namespace file_handler {
         std::ifstream file(file_path);
 
         if (!file.is_open()) {
-            std::cerr << "Error: Could not open the file: " << file_path << "\n";
+            logger.log("Error: Could not open the file: ", file_path, "\n");
             return false;
         }
 
@@ -103,7 +103,7 @@ namespace file_handler {
 
     string generate_dir_listing(const string& dir_path, const string& root) {
         string html;
-        html += "<ul>";
+        
         fs::path path = dir_path;
         
         if (fs::exists(path) && fs::is_directory(path)) {
@@ -116,30 +116,51 @@ namespace file_handler {
                 if (filename.find(":Zone.Identifier") != std::string::npos)
                     continue;
                 
-                html += "<li style=\"display:flex; gap:10px; align-items:center;\"><a href=\"" + filepath + "\">" + filename;
+
+                // html += "<div class = \"entry\">";
+                // html += "<li style=\"display:flex; white-space: nowrap; overflow-x: auto; gap:10px; align-items:center;\"><a href=\"" + filepath + "\">" + filename;
+                html += "<div class=\"item\" id=\"filename\"><a href=\"" + filepath + "\"> > " + filename;
+                
                 if (entry.is_directory()) html += "/";
-                html += "</a>";
+                html += "</a></div>";
+
+                if (!entry.is_directory()) {    
+                    // download button
+                    html+= "<div class=\"item\" id=\"download\">"
+                            "<form action=\"" + filepath + "/download\""
+                            "method=\"post\">"
+                            "<button type=\"submit\">"
+                            "<img class=\"icon\" src=\"/static/download_icon.png\" alt=\"download\""
+                            "</button>"
+                            "</form></div>";
+                }
+                else {
+                    html += "<div class=\"item\"></div>";
+                }
 
                 // rename button
-                html += "<button href=\"#\""
-                        "type=\"button\""
+                html += "<div class=\"item\" id=\"rename\">"
+                        "<button type=\"button\""
                         "onclick=\"renameFile('" + filepath + "', '" + filename + "'); event.preventDefault();\">"
-                        "Rename"
-                        "</button>";
+                        "<img class=\"icon\" src=\"/static/rename_icon.png\" alt=\"rename\""
+                        "</button></div>";
 
                 // delete button
-                html+= "<form action=\"" + filepath + "/delete\""
+                html+=  "<div class=\"item\" id=\"delete\">"
+                        "<form action=\"" + filepath + "/delete\""
                         "method=\"post\""
                         "onsubmit=\"return confirm('Delete " + filename + "?');\">"
-                        "<button type=\"submit\">Delete</button>"
-                        "</form>";
-                html += "</li>"; 
+                        "<button type=\"submit\">"
+                        "<img class=\"icon\" src=\"/static/delete_icon.png\" alt=\"delete\""
+                        "</button>"
+                        "</form></div>";
+
+                // html += "</div>";
             }
         } else {
             std::cerr << "Directory: ./" << dir_path << " does not exist or is invalid.\n";
             return "";
         }
-        html += "</ul>";
         return html;
     }
 

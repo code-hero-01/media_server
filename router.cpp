@@ -48,6 +48,9 @@ Response Router::route(const Request& req, HttpConnection& conn)
         else if (req.path.ends_with("/rename")) {
             return handle_rename(req);
         }
+        else if (req.path.ends_with("/download")) {
+            return handle_media(req, ROOT);
+        }
         else 
             return Response(405, "text/html", "<h1>405 Method Not Allowed</h1>");
     }
@@ -103,10 +106,17 @@ Response Router::handle_media(const Request& req, const string& fs_root) {
         return Response(403, "text/html", "<h1>403 Forbidden</h1>");
     }
     
+    bool download = false;
+    if (path.ends_with("/download")) {
+        download = true;
+        path = path.substr(0, path.size() - 9);
+    }
+
     if (!fs::exists(path)) {
         logger.log("\"", path, "\" does not exit\n");
         return Response(400, "text/html", "<h1>404 Not Found<h1>");
     } 
+    string filename = fs::path(path).filename().string();
 
     if (std::filesystem::is_directory(path)) {  // if directory is requested
         string page;
@@ -121,7 +131,12 @@ Response Router::handle_media(const Request& req, const string& fs_root) {
         string content_list = file_handler::generate_dir_listing(path, ROOT);
         file_handler::render_template(page, "{{CONTENT_LIST}}", content_list);
         
-        return Response(200, "text/html", page);
+        Response res(200, "text/html", page);
+        // if (download == true) { 
+        //     res.headers["Content-Type"] = "application/zip";   
+        //     res.headers["Content-Disposition"] = "attachment; filename=\"" + filename + "\"";
+        // }
+        return res;
     }    
     else {  // if file is requested
         string content;
@@ -148,6 +163,10 @@ Response Router::handle_media(const Request& req, const string& fs_root) {
             res.end = range.end;
             res.path = path;    
             res.content_length = range.end - range.start + 1;
+
+            if (download == true) 
+                res.headers["Content-Disposition"] = "attachment; filename=\"" + filename + "\"";
+
             return res;
         }   
         else {
@@ -158,6 +177,10 @@ Response Router::handle_media(const Request& req, const string& fs_root) {
             res.is_file = true;
             res.path = path;
             res.content_length = file_handler::get_file_size(path);
+
+            if (download == true) 
+                res.headers["Content-Disposition"] = "attachment; filename=\"" + filename + "\"";
+
             return res;
         }
     }
@@ -282,3 +305,4 @@ Response Router::handle_rename(const Request& req) {
     res.headers["Location"] = parent_url.string();
     return res;
 }
+

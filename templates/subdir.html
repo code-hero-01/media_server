@@ -4,21 +4,22 @@
 		<meta charset="UTF-8">
     	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<script src="/static/script.js" defer></script>
+		<link rel="stylesheet" href="/static/styles.css">
 		<title>Media Server</title>
 	</head>
 	<body>
-		<div>
-            <h1>{{BREADCRUMBS}}</h1>
-    		<form action="{{CURR_DIR}}/upload" method="post" enctype="multipart/form-data">
-				<input type="file" name="file">
-				<input type="submit" value="upload">
-			</form>
+		<h1>{{BREADCRUMBS}}</h1>
+		<form action="{{CURR_DIR}}/upload" method="post" enctype="multipart/form-data">
+			<input type="file" name="file">
+			<input type="submit" value="upload">
+		</form>
 
-			<form action="{{CURR_DIR}}/mkdir" method="post">
-				<input type="text" name="folder_name">
-				<input type="submit" value="create folder">
-			</form>
+		<form action="{{CURR_DIR}}/mkdir" method="post">
+			<input type="text" name="folder_name">
+			<input type="submit" value="create folder">
+		</form>
 
+		<div class="grid-container">
 			{{CONTENT_LIST}}
 		</div>
 	</body>

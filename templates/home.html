@@ -4,11 +4,12 @@
 		<meta charset="UTF-8">
     	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<script src="/static/script.js" defer></script>
+		<link rel="stylesheet" href="/static/styles.css">
 		<title>Media Server</title>
 	</head>
 	<body>
 		<h1>home</h1>
-		<img src="/static/lain-dance.gif" alt="lain bustin it down, surreal style">
+		<img src="/static/lain-dance.gif" alt="lain bustin it down, surreal style" width="200" height="200">
 		
 		<form action="{{CURR_DIR}}/upload" method="post" enctype="multipart/form-data">
 			<input type="file" name="file">
@@ -21,8 +22,8 @@
 		</form>
 
 		<h2>directory listing for {{ROOT}}</h2>
-		<div>
-    		{{CONTENT_LIST}}
+		<div class="grid-container">
+			{{CONTENT_LIST}}
 		</div>
 	</body>
 </html>

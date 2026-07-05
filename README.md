@@ -1,8 +1,8 @@
 # Media Server
 
-A self-hosted multithraded http server written in C++.
+A self-hosted multithraded http media streaming server written in C++.
 
-- Streams text, image, music and video files from a specified directory over HTTP
+- Streams text, image, music and video files from the specified directory over HTTP
 - Upload files, create new folders, delete files, rename files
 - Uses POSIX TCP sockets
 - Multithreaded architecture using thread pool

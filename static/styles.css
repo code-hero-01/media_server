@@ -1,0 +1,46 @@
+:root {
+  color-scheme: light dark;
+  --bg-primary: light-dark(#ffffff, #121212);
+  --text-primary: light-dark(#333333, #ffffff);
+  --accent-color: light-dark(#0066cc, #99ccff);
+}
+
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding-left: 10px;
+}
+
+.grid-container {
+  display: grid;
+  grid-template-columns: 20fr 1fr 1fr 1fr;
+  column-gap: 5px;
+  row-gap: 5px;
+  white-space: nowrap;
+  overflow-x: auto;
+}
+
+
+#filename {
+  white-space: nowrap;
+  overflow-x: auto;
+  min-width: 250px;
+}
+
+button[type="submit"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon {
+  max-height: 15px;
+  max-width: 15px;
+  object-fit: contain;
+  display: block;
+}
