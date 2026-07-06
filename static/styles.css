@@ -16,31 +16,60 @@ body {
     padding-left: 10px;
 }
 
-.grid-container {
-  display: grid;
-  grid-template-columns: 20fr 1fr 1fr 1fr;
-  column-gap: 5px;
+.content-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1000px;
   row-gap: 5px;
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  min-width: none;
+}
+
+.filename {
+  flex: 1;
+  min-width: 0;
   white-space: nowrap;
   overflow-x: auto;
 }
 
-
-#filename {
-  white-space: nowrap;
-  overflow-x: auto;
-  min-width: 250px;
+.menu-container {
+    flex-shrink: 0;      
+    margin-left: 8px;
+    position: relative;
 }
 
-button[type="submit"] {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.menu-btn {
+  cursor: pointer;
+  background-color: none;
+  border: none;
 }
 
-.icon {
-  max-height: 15px;
-  max-width: 15px;
-  object-fit: contain;
-  display: block;
+.menu {
+  display: none;
+  background-color: #333333;
+  border-radius: 6px;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 100px;
+}
+
+.menu button {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    text-align: left;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+.menu button:hover {
+  background-color: #686868;
 }
