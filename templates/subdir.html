@@ -8,19 +8,30 @@
 		<title>Media Server</title>
 	</head>
 	<body>
-		<h1>{{BREADCRUMBS}}</h1>
-		<form action="{{CURR_DIR}}/upload" method="post" enctype="multipart/form-data">
-			<input type="file" name="file">
-			<input type="submit" value="upload">
-		</form>
+		<div class="left-panel">
+			<div class="header">
+				<div class="header-text">
+					<h1>{{BREADCRUMBS}}</h1>
+					
+					<form action="{{CURR_DIR}}/upload" method="post" enctype="multipart/form-data">
+						<input type="file" name="file">
+						<input type="submit" value="upload">
+					</form>
 
-		<form action="{{CURR_DIR}}/mkdir" method="post">
-			<input type="text" name="folder_name">
-			<input type="submit" value="create folder">
-		</form>
-
-		<div class="content-list">
-			{{CONTENT_LIST}}
+					<form action="{{CURR_DIR}}/mkdir" method="post">
+						<input type="text" name="folder_name">
+						<input type="submit" value="create folder">
+					</form>
+				</div>
+			</div>
+			
+			<div class="content-list">
+				{{CONTENT_LIST}}
+			</div>
 		</div>
+
+		<aside class="right-panel">
+            <img src="/static/misato_ucc_coffee.png" alt="">
+        </aside>
 	</body>
 </html>

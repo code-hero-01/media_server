@@ -8,22 +8,34 @@
 		<title>Media Server</title>
 	</head>
 	<body>
-		<h1>home</h1>
-		<img src="/static/lain-dance.gif" alt="lain bustin it down, surreal style" width="200" height="200">
-		
-		<form action="{{CURR_DIR}}/upload" method="post" enctype="multipart/form-data">
-			<input type="file" name="file">
-			<input type="submit" value="upload">
-		</form>
+		<div class="left-panel">
+			<div class="header">
+				<div class="header-text">
+					<h1>home</h1>
+					
+					<form action="{{CURR_DIR}}/upload" method="post" enctype="multipart/form-data">
+						<input type="file" name="file">
+						<input type="submit" value="upload">
+					</form>
 
-		<form action="{{CURR_DIR}}/mkdir" method="post">
-			<input type="text" name="folder_name">
-			<input type="submit" value="create folder">
-		</form>
+					<form action="{{CURR_DIR}}/mkdir" method="post">
+						<input type="text" name="folder_name">
+						<input type="submit" value="create folder">
+					</form>
 
-		<h2>directory listing for {{ROOT}}</h2>
-		<div class="content-list">
-			{{CONTENT_LIST}}
+					<h2>directory listing for {{ROOT}}</h2>
+				</div>
+
+				<img src="/static/lain-dance.gif" alt="lain bustin it down, surreal style" width="150" height="150">
+			</div>
+			
+			<div class="content-list">
+				{{CONTENT_LIST}}
+			</div>
 		</div>
+
+		<aside class="right-panel">
+            <img src="/static/asuka_ucc_coffee.png" alt="">
+        </aside>
 	</body>
 </html>

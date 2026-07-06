@@ -5,30 +5,63 @@
   --accent-color: light-dark(#0066cc, #99ccff);
 }
 
+html,
+body {
+    height: 100%;
+    margin: 0;
+}
+
 body {
     background-color: var(--bg-primary);
     color: var(--text-primary);
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-    flex-wrap: wrap;
-    padding-left: 10px;
+    flex-direction: row;
+    width: 100%;
+}
+
+
+.left-panel {
+  flex: 1;
+  min-width: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-left: 10px;
+}
+
+.right-panel {
+  flex: 0 0 300px;
+  position: sticky;
+}
+
+.right-panel img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.header {
+  flex-shrink: 0;
+  display: flex;
 }
 
 .content-list {
+  flex: 1;
   display: flex;
   flex-direction: column;
   width: 100%;
   max-width: 1000px;
   row-gap: 5px;
+  overflow-y: auto;
 }
 
 .row {
   display: flex;
   flex-direction: row;
   width: 100%;
-  min-width: none;
+  min-width: 0;
 }
 
 .filename {
@@ -46,7 +79,7 @@ body {
 
 .menu-btn {
   cursor: pointer;
-  background-color: none;
+  background: none;
   border: none;
 }
 
