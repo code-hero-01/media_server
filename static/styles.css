@@ -19,7 +19,6 @@ body {
     width: 100%;
 }
 
-
 .left-panel {
   flex: 1;
   min-width: 500px;
@@ -32,7 +31,7 @@ body {
 }
 
 .right-panel {
-  flex: 0 0 300px;
+  flex: 0 0 350px;
   position: sticky;
 }
 
@@ -45,6 +44,12 @@ body {
 .header {
   flex-shrink: 0;
   display: flex;
+}
+
+.header-text {
+  display: flex;
+  flex-direction: column;
+  row-gap: 10px;
 }
 
 .content-list {
@@ -60,14 +65,22 @@ body {
 .row {
   display: flex;
   flex-direction: row;
+  align-items: center;
+  flex-shrink: 0;
   width: 100%;
   min-width: 0;
+  border-radius: 3px;
+}
+
+.row:hover {
+  background-color: #444347;
 }
 
 .filename {
   flex: 1;
   min-width: 0;
   white-space: nowrap;
+  padding-left: 7px;
   overflow-x: auto;
 }
 
@@ -81,6 +94,8 @@ body {
   cursor: pointer;
   background: none;
   border: none;
+  padding-right: 5px;
+  margin: 0%;
 }
 
 .menu {
@@ -91,6 +106,7 @@ body {
   top: 100%;
   right: 0;
   width: 100px;
+  z-index: 1000;
 }
 
 .menu button {
@@ -104,5 +120,5 @@ body {
 }
 
 .menu button:hover {
-  background-color: #686868;
+  background-color: #6e6d72;
 }
