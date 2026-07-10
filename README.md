@@ -43,3 +43,9 @@ Once the compilation finishes, you can run the executable from inside your `buil
    cd test
    ./benchmark <number of clients> <number of requests per client>
 ```
+
+## Future Plans  
+
+- Make the server polling instead of thread pool to dramatically increase client throughput  
+- Allow uploading folders to the server
+- Allow clients to download entire folder as a zip file
