@@ -1,5 +1,5 @@
 build/
-
+secret/*
 # Ignore everything in media
 media/*
 
