@@ -4,6 +4,7 @@ A self-hosted multithraded http media streaming server written in C++.
 
 - Streams text, image, music and video files from the specified directory over HTTP
 - Upload files, create new folders, delete files, rename files
+- Supports HTTP GET and POST requests
 - Uses POSIX TCP sockets
 - Multithreaded architecture using thread pool
 

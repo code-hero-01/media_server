@@ -1,5 +1,6 @@
 build/
-secret/*
+secret.html
+secret/
 # Ignore everything in media
 media/*
 

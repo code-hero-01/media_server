@@ -1,4 +1,4 @@
-#include "header_files/file_handler.h"
+#include "file_handler.h"
 
 namespace file_handler {
     // read html text from an html file in template

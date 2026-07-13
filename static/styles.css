@@ -125,3 +125,12 @@ body {
 .menu button:hover {
   background-color: #6e6d72;
 }
+
+h1 {
+  margin-bottom: 5px; 
+}
+
+h2 {
+  margin-top: 0;      
+  margin-bottom: 5px;  
+}

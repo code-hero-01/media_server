@@ -1,4 +1,4 @@
-#include "header_files/router.h"
+#include "router.h"
 
 Router::Router(const string& root_dir) :
     ROOT(root_dir) {}
@@ -15,7 +15,7 @@ Response Router::route(const Request& req, HttpConnection& conn)
 
     else if (req.method == "GET") { 
         // homepage
-        if (req.path == "/") {
+        if (req.path == "/" || req.path == "/home") {
             return handle_home(req);
         }
 
