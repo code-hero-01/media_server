@@ -107,20 +107,25 @@ void worker(
 }
 
 int main(int argc, char* argv[]) {
-    if (argc != 3) {
-        std::cerr << "Usage: benchmark <number of clients> <number of requests per client>\n";
+    if (argc < 3) {
+        std::cerr << "Usage: benchmark <number of clients> <number of requests per client> <optiona: server ip>\n";
         return 1;
     }
     const int NUM_CLIENTS = std::stoi(argv[1]);
     const int NUM_REQUESTS = std::stoi(argv[2]);
     
+    std::string server_ip = SERVER_IP;
+    if (argc == 4) {
+        server_ip = argv[3];
+    }
+
     addrinfo hints{}, *res; 
     hints.ai_family = AF_UNSPEC;    // either ipv4 or ipv6
     hints.ai_socktype = SOCK_STREAM;   // TCP
     hints.ai_flags = AI_NUMERICHOST;  // do not resolve DNS, expect numeric IP
 
     int status;
-    if ((status = getaddrinfo(SERVER_IP, PORT, &hints, &res)) != 0) {
+    if ((status = getaddrinfo(server_ip.c_str(), PORT, &hints, &res)) != 0) {
         std::cerr << "getaddrinfo: " << gai_strerror(status) << "\n";
         return 1;
     }

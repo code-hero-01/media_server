@@ -18,17 +18,17 @@ A self-hosted multithraded http media streaming server written in C++.
 
 2. **Create a build directory**:  
    ```bash
-   mkdir build && cd build
+   mkdir build
    ```
 
 3. **Configure the project**:  
    ```bash
-   cmake ..
+   cmake .
    ```
 
 4. **Compile the source code**:    
  ```bash
-   cmake --build .
+   cmake --build build
    ```   
 
 ## Running the Application  
@@ -36,10 +36,11 @@ A self-hosted multithraded http media streaming server written in C++.
 Once the compilation finishes, you can run the executable from inside your `build` directory:  
 
   ```bash
-   ./media_server
+   ./build/media_server
   ```   
 
 ## Benchmarking and Testing  
+while server is running in another terminal:
 ```bash
    cd test
    ./benchmark <number of clients> <number of requests per client>
