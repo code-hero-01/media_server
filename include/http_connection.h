@@ -14,6 +14,7 @@ using std::string;
 #include "response.h"
 #include "file_handler.h"
 #include <chrono>
+#include <limits>
 
 class HttpConnection {
 public:

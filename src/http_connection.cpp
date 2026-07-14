@@ -97,7 +97,7 @@ void HttpConnection::send_file(Response& res) {
 
     size_t file_size = file_handler::get_file_size(res.path);
 
-    if (res.end == SIZE_MAX)
+    if (res.end == std::numeric_limits<size_t>::max())
         res.end = file_size - 1;
 
     if (res.start > res.end || res.end >= file_size)

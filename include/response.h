@@ -3,6 +3,8 @@
 #include <string>
 using std::string;
 #include "request.h"
+#include <limits>
+#include <unordered_map>
 
 struct Response{
     int status;
@@ -12,7 +14,7 @@ struct Response{
     string text;
     size_t content_length;
     string path;
-    size_t start = 0, end = SIZE_MAX;
+    size_t start = 0, end = std::numeric_limits<size_t>::max();
 
     std::unordered_map<string, string> headers;
     
