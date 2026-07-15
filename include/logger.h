@@ -12,12 +12,8 @@ class Logger{
 private:
     std::mutex log_mutex;
 public:
-    inline static std::chrono::steady_clock::time_point start_time;
+    inline static const std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
 
-    void start() {
-        start_time = std::chrono::steady_clock::now();
-    }
-    
     template <typename... Args>
     void log(const Args&... args) {
         std::lock_guard<std::mutex> lock(log_mutex);

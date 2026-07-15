@@ -38,7 +38,7 @@ namespace file_handler {
         std::ofstream file(file_path, std::ios::binary);
 
         if (!file.is_open()) {
-            std::cerr << "Error: Could not open the file: " << file_path << "\n";
+            logger.log("Error: Could not open the file: ", file_path);
             return false;
         }
 
@@ -158,7 +158,7 @@ namespace file_handler {
                 html += "</div>";  // row
             }
         } else {
-            std::cerr << "Directory: ./" << dir_path << " does not exist or is invalid.\n";
+            logger.log("Directory: ./", dir_path, " does not exist or is invalid.");
             return "";
         }
         return html;
@@ -219,7 +219,7 @@ namespace file_handler {
         string segment;
         string current_path;
 
-        html = R"(<a href="/">./ </a>)";
+        html = R"(<a href="/">./</a>)";
 
         while (std::getline(ss, segment, '/')) {
             if (segment.empty())
@@ -228,7 +228,7 @@ namespace file_handler {
             current_path += segment;
 
             html += "<a href=\"/" + current_path + "\">";
-            html += segment + "/ ";
+            html += segment + "/";
             html += "</a>";
         }
 

@@ -14,7 +14,6 @@ Server::Server(string port, string dir_name, bool debug)
     }
 
 void Server::start() {
-    logger.start();
     std::cerr << "Media_Server waking up...\n";
 
     addrinfo hints{}, *res; 

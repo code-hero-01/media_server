@@ -101,7 +101,7 @@ Response Router::handle_fs(const Request& req, const string& fs_root) {
         //logger.log("req.path = ", req.path);
         path = file_handler::resolve_path(req.path, fs_root);
     } catch (const std::exception& e) {
-        std::cerr << "file resolution error: " << e.what() << "\n";
+        logger.log("file resolution error: ", e.what());
         return Response(403, "text/html", "<h1>403 Forbidden</h1>");
     }
     
@@ -112,7 +112,7 @@ Response Router::handle_fs(const Request& req, const string& fs_root) {
     }
 
     if (!fs::exists(path)) {
-        logger.log("\"", path, "\" does not exist\n");
+        logger.log("\"", path, "\" does not exist");
         return Response(400, "text/html", "<h1>404 Not Found</h1>");
     } 
     string filename = fs::path(path).filename().string();
@@ -197,7 +197,7 @@ Response Router::handle_upload(const Request& req, HttpConnection& conn) {
     try {
         dest_dir = file_handler::resolve_path(url_dir, ROOT);
     } catch (const std::exception& e) {
-        std::cerr << "file resolution error: " << e.what() << "\n";
+        logger.log("file resolution error: ", e.what());
         return Response(403, "text/html", "<h1>403 Forbidden</h1>");
     }
     
@@ -221,7 +221,7 @@ Response Router::handle_mkdir(const Request& req) {
     try {
         dest_dir = file_handler::resolve_path(url_dir, ROOT);
     } catch (const std::exception& e) {
-        std::cerr << "file resolution error: " << e.what() << "\n";
+        logger.log("file resolution error: ", e.what());
         return Response(403, "text/html", "<h1>403 Forbidden</h1>");
     }
     
@@ -250,7 +250,7 @@ Response Router::handle_delete(const Request& req) {
     try {
         path = file_handler::resolve_path(url_path, ROOT);
     } catch (const std::exception& e) {
-        std::cerr << "file resolution error: " << e.what() << "\n";
+        logger.log("file resolution error: ", e.what());
         return Response(403, "text/html", "<h1>403 Forbidden</h1>");
     }
 
@@ -272,7 +272,7 @@ Response Router::handle_rename(const Request& req) {
     try {
         old_path = file_handler::resolve_path(url_path, ROOT);
     } catch (const std::exception& e) {
-        std::cerr << "file resolution error: " << e.what() << "\n";
+        logger.log("file resolution error: ", e.what());
         return Response(403, "text/html", "<h1>403 Forbidden</h1>");
     }
 
@@ -290,7 +290,7 @@ Response Router::handle_rename(const Request& req) {
     try {
         new_path = file_handler::resolve_path(new_path, ROOT);
     } catch (const std::exception& e) {
-        std::cerr << "file resolution error: " << e.what() << "\n";
+        logger.log("file resolution error: ", e.what());
         return Response(403, "text/html", "<h1>403 Forbidden</h1>");
     }
     std::cout << "parent path: " << parent_path << "\n";
