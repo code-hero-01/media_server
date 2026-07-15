@@ -20,7 +20,7 @@ using namespace std::chrono_literals;
 
 int main(int argc, char* argv[]) {
     if (argc > 2) {
-        std::cerr << "Usage: media_server <optional: root_directory, default: ./media>\n";
+        std::cerr << "Usage: media_server <optional: root_directory (default: ./media>)\n";
         return 1;
     }
     

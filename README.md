@@ -36,7 +36,7 @@ A self-hosted multithraded http media streaming server written in C++.
 Once the compilation finishes, you can run the executable from inside your `build` directory:  
 
   ```bash
-   ./build/media_server
+   ./build/media_server <optional: root_directory (default: ./media>)
   ```   
 
 ## Benchmarking and Testing  
