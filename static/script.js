@@ -7,7 +7,6 @@ function renameFile(path, curr_name) {
     const form = document.createElement("form");
     form.method = "POST";
     form.action = path + "/rename";
-
     const input = document.createElement("input");
     input.type = "hidden";
     input.name = "new_name";

@@ -1,7 +1,7 @@
 #include "router.h"
 
 Router::Router(const string& root_dir) :
-    ROOT(root_dir) {}
+    ROOT(fs::canonical(root_dir).string()) {}
 
 Response Router::route(const Request& req, HttpConnection& conn)
 {
@@ -15,23 +15,22 @@ Response Router::route(const Request& req, HttpConnection& conn)
 
     else if (req.method == "GET") { 
         // homepage
-        if (req.path == "/" || req.path == "/home") {
+        if (req.path == "/") {
             return handle_home(req);
         }
 
         // static file request
         else if (req.path.starts_with("/static/")) {
-            return handle_media(req, "static");
-        }
-
-        // file or folder request
-        else if (req.path.starts_with("/" + ROOT) || req.path.starts_with("/" + ROOT + "/")) {
-            return handle_media(req, ROOT);
+            return handle_fs(req, "static");
         }
 
         // template routes (/about, /contact, etc.)
-        else { 
+        else if (req.path.starts_with("/templates/")) { 
             return handle_template(req);
+        }
+
+        else {
+            return handle_fs(req, ROOT);
         }
     }
 
@@ -49,7 +48,7 @@ Response Router::route(const Request& req, HttpConnection& conn)
             return handle_rename(req);
         }
         else if (req.path.ends_with("/download")) {
-            return handle_media(req, ROOT);
+            return handle_fs(req, ROOT);
         }
         else 
             return Response(405, "text/html", "<h1>405 Method Not Allowed</h1>");
@@ -70,9 +69,9 @@ Response Router::handle_home(const Request& req) {
     if (!file_handler::read_template("templates/home.html", page)) 
         return Response(404, "text/html", "<h1>404 Not Found</h1>");
     
-    string content_list = file_handler::generate_dir_listing("./" + ROOT, ROOT);
-    file_handler::render_template(page, "{{ROOT}}", "./" + ROOT);
-    file_handler::render_template(page, "{{CURR_DIR}}", "./" + ROOT);    
+    string content_list = file_handler::generate_dir_listing(ROOT, ROOT);
+    string breadcrumbs = file_handler::generate_breadcrumbs(decode_url(req.path));
+    file_handler::render_template(page, "{{BREADCRUMBS}}", breadcrumbs);   
     file_handler::render_template(page, "{{CONTENT_LIST}}", content_list);
     
     return Response(200, "text/html", page);
@@ -80,12 +79,12 @@ Response Router::handle_home(const Request& req) {
 
 Response Router::handle_template(const Request& req) { 
     string page;
-    string path = "/templates" + req.path + ".html";
+    string path = req.path;
     try {
         //logger.log("req.path = ", req.path);
         path = file_handler::resolve_path(path, "templates");
     } catch (const std::exception& e) {
-        std::cerr << "file resolution error: " << e.what() << "\n";
+        logger.log("file resolution error: ", e.what());
         return Response(403, "text/html", "<h1>403 Forbidden</h1>");
     }
 
@@ -96,7 +95,7 @@ Response Router::handle_template(const Request& req) {
 }
 
 
-Response Router::handle_media(const Request& req, const string& fs_root) {
+Response Router::handle_fs(const Request& req, const string& fs_root) {
     string path;
     try {
         //logger.log("req.path = ", req.path);
@@ -113,8 +112,8 @@ Response Router::handle_media(const Request& req, const string& fs_root) {
     }
 
     if (!fs::exists(path)) {
-        logger.log("\"", path, "\" does not exit\n");
-        return Response(400, "text/html", "<h1>404 Not Found<h1>");
+        logger.log("\"", path, "\" does not exist\n");
+        return Response(400, "text/html", "<h1>404 Not Found</h1>");
     } 
     string filename = fs::path(path).filename().string();
 
@@ -212,7 +211,7 @@ Response Router::handle_upload(const Request& req, HttpConnection& conn) {
     }
     logger.log("'", filename, "' downloaded successfully to '", dest_dir, "'");
     Response res(303, "text/plain", "");
-    res.headers["Location"] = url_dir;
+    res.headers["Location"] = (url_dir == "") ? "/" : url_dir;
     return res;    
 }
 
@@ -241,7 +240,7 @@ Response Router::handle_mkdir(const Request& req) {
     }
     logger.log("'", dir_name, "' directory creatory succesffuly in '", dest_dir, "'");
     Response res(303, "text/plain", "");
-    res.headers["Location"] = url_dir;
+    res.headers["Location"] = (url_dir == "") ? "/" : url_dir;
     return res;
 }
 
@@ -263,7 +262,7 @@ Response Router::handle_delete(const Request& req) {
     Response res(303, "text/plain", "");
     
     fs::path parent_url = fs::path(url_path).parent_path();
-    res.headers["Location"] = parent_url.string();
+    res.headers["Location"] = (parent_url.string() == "") ? "/" : parent_url.string();
     return res;
 }
 
@@ -277,7 +276,7 @@ Response Router::handle_rename(const Request& req) {
         return Response(403, "text/html", "<h1>403 Forbidden</h1>");
     }
 
-    fs::path parent_url = fs::path(url_path).parent_path();
+    fs::path parent_path = fs::path(old_path).parent_path();
 
     UrlEncodedForm form(req.body);
     string new_name;
@@ -286,14 +285,16 @@ Response Router::handle_rename(const Request& req) {
     else
         return Response(400, "text/html", "<h1>400 Bad Request</h1>");
 
-    string new_path = parent_url.string() + "/" + new_name;
-    std::cout << new_path;
+    string new_path = parent_path.string() + "/" + new_name;
+    std::cout << new_path << "\n";
     try {
         new_path = file_handler::resolve_path(new_path, ROOT);
     } catch (const std::exception& e) {
         std::cerr << "file resolution error: " << e.what() << "\n";
         return Response(403, "text/html", "<h1>403 Forbidden</h1>");
     }
+    std::cout << "parent path: " << parent_path << "\n";
+    std::cout << "new path: " << new_path << "\n";
 
     if (!file_handler::rename_file(old_path, new_path)) {
         logger.log("failed to rename: \"", old_path, "\" to \"", new_name, "\"");
@@ -301,8 +302,9 @@ Response Router::handle_rename(const Request& req) {
     }
     logger.log("\"", old_path, "\" successfully renamed to \"", new_name, "\"");
     Response res(303, "text/plain", "");
-    
-    res.headers["Location"] = parent_url.string();
+
+    string parent_url = fs::path(url_path).parent_path().string();
+    res.headers["Location"] = (parent_url == "") ? "/" : parent_url;
     return res;
 }
 

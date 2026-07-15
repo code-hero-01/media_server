@@ -110,8 +110,8 @@ namespace file_handler {
             for (const auto& entry : fs::directory_iterator(path)) {
                 string filename = entry.path().filename().string();
                 
-                fs::path rel = fs::relative(entry.path(), "./" + root);
-                string filepath = "/" + root + "/" + rel.string();
+                fs::path rel = fs::relative(entry.path(), root);
+                string filepath = "/" + rel.string();
 
                 if (filename.find(":Zone.Identifier") != std::string::npos)
                     continue;
@@ -166,28 +166,28 @@ namespace file_handler {
 
     string resolve_path(
         const string& url_path, 
-        const string& filesystem_root) 
+        const string& fs_root) 
     {
         string decoded = decode_url(url_path);
         // logger.log("decoded = ", decoded);
         
-        fs::path root_dir = fs::weakly_canonical("./" + filesystem_root);
+        fs::path canonical_root = fs::weakly_canonical(fs_root);
 
-        string url_prefix = "/" + filesystem_root;
-        if (!decoded.starts_with(url_prefix) && !decoded.starts_with(url_prefix + "/"))
-            throw std::runtime_error("invalid root");
+        string url_prefix = fs_root;
+        if (!url_prefix.starts_with('/')) 
+            url_prefix = "/" + url_prefix;
         
-        string rel = decoded.substr(("/" + filesystem_root).size()); // remove "/root/"
+        string rel = decoded;
+        if (rel.starts_with(url_prefix)) rel = decoded.substr((url_prefix).size());
         if (!rel.empty() && rel.front() == '/')
             rel.erase(0, 1);
         fs::path relative(rel);
         // std::cout << relative.string() << "\n";
-
-        fs::path requested = fs::weakly_canonical(root_dir / relative);
+        fs::path requested = fs::weakly_canonical(fs::path(fs_root) / relative);
         // std::cout << requested.string() << "\n";
 
-        if (requested.string().rfind(root_dir.string(), 0) != 0) {
-            throw std::runtime_error("path traversal");
+        if (requested.string().rfind(canonical_root.string(), 0) != 0) {
+            throw std::runtime_error("path traversal - " + requested.string());
         }
         // std::cout << requested << "\n";
         return requested;   
@@ -219,17 +219,16 @@ namespace file_handler {
         string segment;
         string current_path;
 
-        html = R"(<a href="/">Home</a>)";
+        html = R"(<a href="/">./ </a>)";
 
         while (std::getline(ss, segment, '/')) {
             if (segment.empty())
                 continue;
             
-            current_path += "/" + segment;
+            current_path += segment;
 
-            html += " / ";
-            html += "<a href=\"" + current_path + "\">";
-            html += segment;
+            html += "<a href=\"/" + current_path + "\">";
+            html += segment + "/ ";
             html += "</a>";
         }
 

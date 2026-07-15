@@ -108,7 +108,7 @@ void worker(
 
 int main(int argc, char* argv[]) {
     if (argc < 3) {
-        std::cerr << "Usage: benchmark <number of clients> <number of requests per client> <optiona: server ip>\n";
+        std::cerr << "Usage: benchmark <number of clients> <number of requests per client> <optional: server ip, default: 127.0.0.1 (localhost)>\n";
         return 1;
     }
     const int NUM_CLIENTS = std::stoi(argv[1]);

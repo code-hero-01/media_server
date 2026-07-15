@@ -11,7 +11,7 @@
 		<div class="left-panel">
 			<div class="header">
 				<div class="header-text">
-					<h1>{{BREADCRUMBS}}</h1>
+					<h1>directory listing for {{BREADCRUMBS}}</h1>
 					
 					<form action="{{CURR_DIR}}/upload" method="post" enctype="multipart/form-data">
 						<input type="file" name="file">
@@ -28,6 +28,11 @@
 			<div class="content-list">
 				{{CONTENT_LIST}}
 			</div>
+		
+			<div class="footer">
+				<a href="templates/about.html">about→</a>
+			</div>
+		
 		</div>
 
 		<aside class="right-panel">
