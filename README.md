@@ -43,7 +43,7 @@ Once the compilation finishes, you can run the executable from inside your `buil
 while server is running in another terminal:
 ```bash
    cd test
-   ./benchmark <number of clients> <number of requests per client>
+   ./benchmark <number of clients> <number of requests per client>  <optional: server ip (default: 127.0.0.1 (localhost))>
 ```
 
 ## Future Plans  
