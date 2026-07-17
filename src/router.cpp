@@ -113,7 +113,7 @@ Response Router::handle_fs(const Request& req, const string& fs_root) {
 
     if (!fs::exists(path)) {
         logger.log("\"", path, "\" does not exist");
-        return Response(400, "text/html", "<h1>404 Not Found</h1>");
+        return Response(404, "text/html", "<h1>404 Not Found</h1>");
     } 
     string filename = fs::path(path).filename().string();
 

@@ -1,9 +1,10 @@
 # Media Server
 
-A self-hosted multithraded http media streaming server written in C++.
+A self-hosted multithreaded http media streaming server written in C++.
 
-- Streams text, image, music and video files from the specified directory over HTTP
-- Upload files, create new folders, delete files, rename files
+- Streams text, image, audio, and video files from the specified directory over HTTP
+- Supports HTTP Range request for video/audio seeking
+- Directory Management - upload files, create new folders, delete files/folders, rename files/folders
 - Supports HTTP GET and POST requests
 - Uses POSIX TCP sockets
 - Multithreaded architecture using thread pool
@@ -48,6 +49,6 @@ while server is running in another terminal:
 
 ## Future Plans  
 
-- Make the server polling instead of thread pool to dramatically increase client throughput  
+- Replace threadpool with event driver I/O model (polling) to improve scalibility for thousands of concurrent connections  
 - Allow uploading folders to the server
 - Allow clients to download entire folder as a zip file
