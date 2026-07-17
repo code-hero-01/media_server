@@ -9,6 +9,8 @@ A self-hosted multithreaded http media streaming server written in C++.
 - Uses POSIX TCP sockets
 - Multithreaded architecture using thread pool
 
+https://github.com/user-attachments/assets/f607e666-0769-4bdf-985f-5610971f5c21
+
 ## Build and Installation   
 
 1. **Clone the repository**:   
