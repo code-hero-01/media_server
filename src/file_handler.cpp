@@ -101,6 +101,25 @@ namespace file_handler {
         return "application/octet-stream";
     }
 
+    std::string escapeHTML(const std::string& s) {
+        std::string out;
+
+        for (char c : s)
+        {
+            switch (c)
+            {
+                case '&': out += "&amp;"; break;
+                case '<': out += "&lt;"; break;
+                case '>': out += "&gt;"; break;
+                case '"': out += "&quot;"; break;
+                default: out += c;
+            }
+        }
+
+        return out;
+    }
+
+
     string generate_dir_listing(const string& dir_path, const string& root) {
         string html;
         
@@ -140,7 +159,9 @@ namespace file_handler {
 
                 // rename button
                 html += "<button type=\"button\" "
-                        "onclick=\"renameFile('" + filepath + "', '" + filename + "'); event.preventDefault();\">"
+                        "data-path=\"" + escapeHTML(filepath) + "\" "
+                        "data-name=\"" + escapeHTML(filename) + "\" "
+                        "onclick=\"renameFile(this.dataset.path, this.dataset.name); event.preventDefault();\">"
                         "Rename"
                         "</button>";
 

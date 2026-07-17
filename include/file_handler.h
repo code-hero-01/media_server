@@ -30,6 +30,7 @@ namespace file_handler {
     string resolve_path(const string& url_path, const string& filesystem_root);
     size_t get_file_size(const string& file_path);
     ByteRange parse_range(const string& header, size_t file_size);
+    string htmlEscape(const string& s);
     
     string generate_dir_listing(const std::string& name, const string& root);
     string generate_breadcrumbs(const string& url_path);
